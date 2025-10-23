@@ -1252,8 +1252,44 @@
         // 初始化應用
         init();
 
-        // 離開頁面前保存位置
-        window.addEventListener('beforeunload', saveLastPosition);
+// ✅ [新增] iPhone Safari 真正全螢幕 + 一開始播放即全螢幕
+function enterIOSFullscreen() {
+    const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isiOS && videoPlayer.webkitEnterFullscreen) {
+        videoPlayer.webkitEnterFullscreen(); // iPhone Safari 專用全螢幕
+    } else if (videoPlayer.requestFullscreen) {
+        // 其他平台用標準 API
+        videoPlayer.requestFullscreen().catch(() => {});
+    }
+}
+
+// ✅ 使用者第一次互動後 → 自動播放並全螢幕
+document.addEventListener('click', async function autoFullscreen() {
+    try {
+        await videoPlayer.play();
+        enterIOSFullscreen();
+    } catch (e) {
+        console.log('自動全螢幕啟動失敗:', e);
+    }
+    document.removeEventListener('click', autoFullscreen);
+}, { once: true });
+
+// ✅ 若影片載入後使用者已互動，仍確保自動進入全螢幕
+videoPlayer.addEventListener('loadeddata', () => {
+    const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isiOS && document.visibilityState === 'visible') {
+        setTimeout(() => {
+            try {
+                if (videoPlayer.paused === false) {
+                    videoPlayer.webkitEnterFullscreen();
+                }
+            } catch (e) {}
+        }, 800);
+    }
+});
+
+// 離開頁面前保存位置
+window.addEventListener('beforeunload', saveLastPosition);
     </script>
 </body>
 </html>
