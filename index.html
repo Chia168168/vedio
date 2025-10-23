@@ -311,7 +311,7 @@
             background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
         }
         
-        /* 全螢幕按鈕 */
+        /* 全螢幕按鈕 - 調整位置避免遮擋截圖按鈕 */
         .fullscreen-btn {
             position: absolute;
             top: min(4vw, 25px);
@@ -639,7 +639,7 @@
         <!-- 全螢幕按鈕 -->
         <button class="fullscreen-btn" id="fullscreenBtn">
             <i class="fas fa-expand"></i>
-            Fullscreen
+            <span>Fullscreen</span>
         </button>
         
         <!-- 幀號顯示 - 完全透明 -->
@@ -798,9 +798,6 @@
             } else {
                 initForDesktop();
             }
-            
-            // 嘗試自動進入全螢幕
-            setTimeout(enterFullscreen, 500);
         }
 
         // 行動設備初始化
@@ -872,7 +869,7 @@
             // 音量控制事件
             volumeBtn.addEventListener('click', toggleMute);
             
-            // 全螢幕控制
+            // 全螢幕控制 - 修復事件監聽器
             fullscreenBtn.addEventListener('click', toggleFullscreen);
             
             // 監聽全螢幕變化
@@ -882,7 +879,7 @@
             document.addEventListener('MSFullscreenChange', handleFullscreenChange);
         }
 
-        // 全螢幕相關功能
+        // 全螢幕相關功能 - 修復實現
         function toggleFullscreen() {
             if (!isFullscreen) {
                 enterFullscreen();
@@ -895,7 +892,9 @@
             const element = document.documentElement;
             
             if (element.requestFullscreen) {
-                element.requestFullscreen();
+                element.requestFullscreen().catch(err => {
+                    console.error('全螢幕請求失敗:', err);
+                });
             } else if (element.webkitRequestFullscreen) {
                 element.webkitRequestFullscreen();
             } else if (element.mozRequestFullScreen) {
@@ -903,9 +902,6 @@
             } else if (element.msRequestFullscreen) {
                 element.msRequestFullscreen();
             }
-            
-            isFullscreen = true;
-            updateFullscreenButton();
         }
 
         function exitFullscreen() {
@@ -918,9 +914,6 @@
             } else if (document.msExitFullscreen) {
                 document.msExitFullscreen();
             }
-            
-            isFullscreen = false;
-            updateFullscreenButton();
         }
 
         function handleFullscreenChange() {
