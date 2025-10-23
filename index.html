@@ -38,34 +38,7 @@
             font-size: var(--font-size-normal);
         }
         
-        /* 狀態欄 */
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--padding-normal);
-            background: rgba(0, 0, 0, 0.8);
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            height: min(10vw, 60px);
-        }
-        
-        .time {
-            font-weight: 700;
-            font-size: var(--font-size-large);
-        }
-        
-        .status-icons {
-            display: flex;
-            gap: min(2vw, 8px);
-        }
-        
-        .status-icons i {
-            font-size: var(--font-size-normal);
-        }
+        /* 移除狀態欄相關樣式 */
         
         /* 影片容器 */
         .video-container {
@@ -210,7 +183,7 @@
         /* 返回按鈕 */
         .back-btn {
             position: absolute;
-            top: min(10vw, 70px);
+            top: min(4vw, 25px);
             left: min(4vw, 25px);
             background: rgba(28, 28, 30, 0.9);
             backdrop-filter: blur(30px);
@@ -292,7 +265,7 @@
         /* 截圖按鈕 */
         .screenshot-btn {
             position: absolute;
-            top: min(10vw, 70px);
+            top: min(4vw, 25px);
             right: min(4vw, 25px);
             background: rgba(28, 28, 30, 0.9);
             backdrop-filter: blur(30px);
@@ -315,7 +288,7 @@
         /* 幀號顯示 */
         .frame-info {
             position: absolute;
-            top: min(20vw, 150px);
+            top: min(12vw, 80px);
             left: min(4vw, 25px);
             background: rgba(28, 28, 30, 0.85);
             backdrop-filter: blur(20px);
@@ -542,16 +515,6 @@
     </style>
 </head>
 <body>
-    <!-- 狀態欄 -->
-    <div class="status-bar">
-        <div class="time" id="currentTimeDisplay">1:45</div>
-        <div class="status-icons">
-            <i class="fas fa-signal"></i>
-            <i class="fas fa-wifi"></i>
-            <i class="fas fa-battery-three-quarters"></i>
-        </div>
-    </div>
-    
     <!-- 影片容器 -->
     <div class="video-container">
         <video id="videoPlayer" playsinline webkit-playsinline muted></video>
@@ -917,13 +880,9 @@
             longPressControls.classList.remove('active');
         }
 
-        // 更新時間顯示
+        // 更新時間顯示 - 移除相關功能
         function updateTime() {
-            const now = new Date();
-            let hours = now.getHours();
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            hours = hours % 12 || 12;
-            currentTimeDisplay.textContent = `${hours}:${minutes}`;
+            // 不再需要更新狀態欄時間
         }
 
         // 檔案選擇處理
@@ -1249,9 +1208,6 @@
 
         // 初始化應用
         init();
-        
-        // 每秒更新時間
-        setInterval(updateTime, 60000);
 
         // 離開頁面前保存位置
         window.addEventListener('beforeunload', saveLastPosition);
