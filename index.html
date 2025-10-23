@@ -283,13 +283,12 @@
             background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
         }
         
-        /* 幀號顯示 */
+        /* 幀號顯示 - 完全透明，没有背景色 */
         .frame-info {
             position: absolute;
             top: min(12vw, 80px);
             left: min(4vw, 25px);
-            background: transparent; /* 帧号显示背景改为透明 */
-            backdrop-filter: blur(20px);
+            background: transparent; /* 帧号显示背景完全透明 */
             padding: min(3vw, 16px) min(4vw, 22px);
             border-radius: min(2vw, 12px);
             font-size: var(--font-size-normal);
@@ -346,14 +345,12 @@
             -webkit-touch-callout: none;
         }
 
-        /* 逐幀控制按鈕 */
+        /* 逐幀控制按鈕 - 完全透明，没有背景色 */
         .frame-controls {
             position: absolute;
             bottom: min(25vw, 200px);
             left: min(4vw, 25px);
-            background: transparent; /* 帧控制项背景改为透明 */
-            backdrop-filter: blur(30px);
-            border-radius: min(4vw, 20px);
+            background: transparent; /* 帧控制项背景完全透明 */
             padding: min(3vw, 15px);
             display: none;
             gap: min(2vw, 12px);
@@ -367,7 +364,7 @@
 
         .frame-control-btn {
             background: transparent; /* 按钮背景全透明 */
-            border: 1px solid rgba(255, 255, 255, 0.2); /* 轻微边框 */
+            border: none;
             color: rgba(255, 255, 255, var(--icon-transparency)); /* 文字半透明 */
             padding: min(3vw, 15px) min(4vw, 20px);
             border-radius: min(2vw, 12px);
@@ -384,18 +381,16 @@
         }
 
         .auto-frame-btn.active {
-            background: rgba(76, 175, 80, 0.2); /* 激活时轻微背景 */
+            color: rgba(76, 175, 80, var(--icon-transparency)); /* 激活时改变文字颜色 */
         }
 
-        /* 長按控制 */
+        /* 長按控制 - 完全透明，没有背景色 */
         .long-press-controls {
             position: absolute;
             bottom: min(40vw, 320px);
             left: 50%;
             transform: translateX(-50%);
-            background: transparent; /* 长按控制背景改为透明 */
-            backdrop-filter: blur(30px);
-            border-radius: min(4vw, 20px);
+            background: transparent; /* 长按控制背景完全透明 */
             padding: min(3vw, 15px);
             display: none;
             gap: min(2vw, 12px);
@@ -408,7 +403,7 @@
 
         .long-press-btn {
             background: transparent; /* 按钮背景全透明 */
-            border: 1px solid rgba(255, 255, 255, 0.2); /* 轻微边框 */
+            border: none;
             color: rgba(255, 255, 255, var(--icon-transparency)); /* 文字半透明 */
             padding: min(3vw, 15px) min(4vw, 25px);
             border-radius: min(2vw, 12px);
@@ -578,7 +573,7 @@
             Screenshot
         </button>
         
-        <!-- 幀號顯示 -->
+        <!-- 幀號顯示 - 完全透明 -->
         <div class="frame-info" id="frameInfo">
             幀號: <span id="frameNumber">0</span>
         </div>
@@ -592,7 +587,7 @@
             <button class="speed-option" data-speed="frame" id="frameByFrameBtn">Frame by Frame</button>
         </div>
 
-        <!-- 逐幀控制按鈕 -->
+        <!-- 逐幀控制按鈕 - 完全透明 -->
         <div class="frame-controls" id="frameControls">
             <button class="frame-control-btn long-press-trigger" id="prevFrameBtn" data-direction="-1">
                 <i class="fas fa-step-backward"></i> 上一幀
@@ -608,7 +603,7 @@
             </button>
         </div>
 
-        <!-- 長按控制提示 -->
+        <!-- 長按控制提示 - 完全透明 -->
         <div class="long-press-controls" id="longPressControls">
             <div class="long-press-btn" id="longPressIndicator">
                 1秒1幀播放中...
