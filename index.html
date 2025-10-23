@@ -1,159 +1,1259 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>全螢幕播放器</title>
-<style>
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background: #000;
-  overflow: hidden;
-}
-.video-container {
-  position: fixed;
-  top: env(safe-area-inset-top);
-  left: 0;
-  right: 0;
-  bottom: env(safe-area-inset-bottom);
-  width: 100vw;
-  height: 100vh;
-  background: #000;
-}
-video {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background: #000;
-}
-.controls {
-  position: absolute;
-  bottom: 10%;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  background: rgba(0,0,0,0.5);
-  padding: 10px 20px;
-  border-radius: 30px;
-}
-button, select, input[type="range"] {
-  background: none;
-  border: 1px solid #fff;
-  color: #fff;
-  font-size: 14px;
-  border-radius: 20px;
-  padding: 5px 10px;
-  cursor: pointer;
-}
-button:hover, select:hover {
-  background: rgba(255,255,255,0.2);
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>全螢幕影片播放器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --base-size: 1vw;
+            --control-size: min(12vw, 80px);
+            --play-size: min(16vw, 100px);
+            --font-size-normal: min(4vw, 20px);
+            --font-size-large: min(5vw, 24px);
+            --font-size-xl: min(6vw, 28px);
+            --padding-normal: min(4vw, 20px);
+            --padding-large: min(5vw, 25px);
+            --border-radius: min(3vw, 15px);
+            --icon-transparency: 0.7; /* 图标透明度 */
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #000;
+            color: #fff;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            touch-action: manipulation;
+            font-size: var(--font-size-normal);
+        }
+        
+        /* 影片容器 - 全螢幕滿版 */
+        .video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1;
+        }
+        
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 改為cover以實現全螢幕滿版 */
+        }
+        
+        /* 控制欄 */
+        .controls-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            padding: min(5vw, 40px) min(4vw, 25px) min(8vw, 60px);
+            display: flex;
+            flex-direction: column;
+            gap: min(4vw, 30px);
+            z-index: 10;
+        }
+        
+        /* 主要控制按鈕 */
+        .main-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 min(3vw, 20px);
+        }
+        
+        .control-btn {
+            background: transparent; /* 按钮背景全透明 */
+            border: none;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 图标半透明 */
+            font-size: min(6vw, 34px);
+            width: var(--control-size);
+            height: var(--control-size);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+        
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
+            transform: scale(0.95);
+        }
+        
+        .play-btn {
+            width: var(--play-size);
+            height: var(--play-size);
+            background: rgba(255, 255, 255, 0.1); /* 播放按钮保持轻微背景 */
+            font-size: min(7vw, 40px);
+        }
+        
+        /* 進度條 - 移到控制項下方 */
+        .progress-area {
+            position: absolute;
+            bottom: min(2vw, 15px);
+            left: min(4vw, 25px);
+            right: min(4vw, 25px);
+            display: flex;
+            flex-direction: column;
+            gap: min(2vw, 10px);
+            z-index: 10;
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: min(1.5vw, 8px);
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: min(1vw, 4px);
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: #ff375f;
+            width: 30%;
+            border-radius: min(1vw, 4px);
+            transition: width 0.1s;
+        }
+        
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: var(--font-size-normal);
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+        }
+        
+        /* 速度控制面板 */
+        .speed-panel {
+            position: absolute;
+            bottom: min(25vw, 200px);
+            right: min(4vw, 25px);
+            background: rgba(28, 28, 30, 0.95);
+            backdrop-filter: blur(30px);
+            border-radius: min(4vw, 20px);
+            padding: min(3vw, 15px);
+            display: flex;
+            flex-direction: column;
+            gap: min(2vw, 12px);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s;
+            min-width: min(30vw, 180px);
+            z-index: 50;
+        }
+        
+        .speed-panel.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .speed-option {
+            background: transparent; /* 按钮背景全透明 */
+            border: none;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 文字半透明 */
+            padding: min(3vw, 18px) min(4vw, 24px);
+            border-radius: min(3vw, 14px);
+            font-size: var(--font-size-normal);
+            text-align: left;
+            transition: background 0.2s;
+            touch-action: manipulation;
+        }
+        
+        .speed-option:active {
+            background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
+        }
+        
+        .speed-option.active {
+            background: rgba(255, 55, 95, 0.2); /* 激活时轻微背景 */
+            font-weight: 600;
+        }
+        
+        /* 返回按鈕 */
+        .back-btn {
+            position: absolute;
+            top: min(4vw, 25px);
+            left: min(4vw, 25px);
+            background: transparent; /* 按钮背景全透明 */
+            border: none;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 图标和文字半透明 */
+            padding: min(3vw, 18px) min(4vw, 25px);
+            border-radius: min(3vw, 14px);
+            font-size: var(--font-size-normal);
+            display: flex;
+            align-items: center;
+            gap: min(2vw, 12px);
+            z-index: 50;
+            touch-action: manipulation;
+        }
+        
+        .back-btn:active {
+            background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
+        }
+        
+        /* 檔案選擇 */
+        .file-selector {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(28, 28, 30, 0.95);
+            backdrop-filter: blur(30px);
+            border-radius: min(5vw, 25px);
+            padding: min(6vw, 40px) min(5vw, 30px);
+            text-align: center;
+            width: 90%;
+            max-width: min(80vw, 450px);
+            z-index: 100;
+        }
+        
+        .file-selector h2 {
+            margin-bottom: min(5vw, 30px);
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 标题半透明 */
+        }
+        
+        .file-label {
+            display: inline-block;
+            background: rgba(255, 55, 95, 0.2); /* 轻微背景 */
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 文字半透明 */
+            padding: min(4vw, 22px) min(6vw, 40px);
+            border-radius: min(3vw, 16px);
+            cursor: pointer;
+            font-weight: 700;
+            font-size: var(--font-size-normal);
+            transition: all 0.2s;
+            touch-action: manipulation;
+            margin: min(2vw, 10px);
+            text-align: center;
+            min-width: min(40vw, 200px);
+            border: 1px solid rgba(255, 255, 255, 0.1); /* 轻微边框 */
+        }
+        
+        .file-label:active {
+            transform: scale(0.96);
+            background: rgba(229, 50, 86, 0.3);
+        }
+        
+        #fileInput, #cameraInput {
+            display: none;
+        }
+        
+        .file-info {
+            margin-top: min(4vw, 25px);
+            font-size: var(--font-size-normal);
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.4;
+        }
+        
+        /* 隱藏檔案選擇器 */
+        .file-selector.hidden {
+            display: none;
+        }
+        
+        /* 截圖按鈕 */
+        .screenshot-btn {
+            position: absolute;
+            top: min(4vw, 25px);
+            right: min(4vw, 25px);
+            background: transparent; /* 按钮背景全透明 */
+            border: none;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 图标和文字半透明 */
+            padding: min(3vw, 18px) min(4vw, 25px);
+            border-radius: min(3vw, 14px);
+            font-size: var(--font-size-normal);
+            display: flex;
+            align-items: center;
+            gap: min(2vw, 12px);
+            z-index: 50;
+            touch-action: manipulation;
+        }
+        
+        .screenshot-btn:active {
+            background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
+        }
+        
+        /* 幀號顯示 - 完全透明，没有背景色 */
+        .frame-info {
+            position: absolute;
+            top: min(12vw, 80px);
+            left: min(4vw, 25px);
+            background: transparent; /* 帧号显示背景完全透明 */
+            padding: min(3vw, 16px) min(4vw, 22px);
+            border-radius: min(2vw, 12px);
+            font-size: var(--font-size-normal);
+            font-weight: 600;
+            z-index: 50;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 文字半透明 */
+        }
+        
+        /* 載入指示器 */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: var(--font-size-large);
+            color: rgba(255, 255, 255, 0.8);
+            display: none;
+            z-index: 50;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        /* 成功訊息 */
+        .success-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: min(4vw, 20px) min(5vw, 30px);
+            border-radius: min(3vw, 14px);
+            font-size: var(--font-size-normal);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .success-message.active {
+            display: block;
+        }
+        
+        /* 防止文字選擇 */
+        * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* 防止長按選單 */
+        * {
+            -webkit-touch-callout: none;
+        }
+
+        /* 逐幀控制按鈕 - 完全透明，没有背景色 */
+        .frame-controls {
+            position: absolute;
+            bottom: min(25vw, 200px);
+            left: min(4vw, 25px);
+            background: transparent; /* 帧控制项背景完全透明 */
+            padding: min(3vw, 15px);
+            display: none;
+            gap: min(2vw, 12px);
+            z-index: 50;
+        }
+
+        .frame-controls.active {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .frame-control-btn {
+            background: transparent; /* 按钮背景全透明 */
+            border: none;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 文字半透明 */
+            padding: min(3vw, 15px) min(4vw, 20px);
+            border-radius: min(2vw, 12px);
+            font-size: var(--font-size-normal);
+            font-weight: 600;
+            touch-action: manipulation;
+            flex: 1;
+            min-width: min(25vw, 120px);
+        }
+
+        .frame-control-btn:active {
+            background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
+            transform: scale(0.95);
+        }
+
+        .auto-frame-btn.active {
+            color: rgba(76, 175, 80, var(--icon-transparency)); /* 激活时改变文字颜色 */
+        }
+
+        /* 長按控制 - 完全透明，没有背景色 */
+        .long-press-controls {
+            position: absolute;
+            bottom: min(40vw, 320px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: transparent; /* 长按控制背景完全透明 */
+            padding: min(3vw, 15px);
+            display: none;
+            gap: min(2vw, 12px);
+            z-index: 50;
+        }
+
+        .long-press-controls.active {
+            display: flex;
+        }
+
+        .long-press-btn {
+            background: transparent; /* 按钮背景全透明 */
+            border: none;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 文字半透明 */
+            padding: min(3vw, 15px) min(4vw, 25px);
+            border-radius: min(2vw, 12px);
+            font-size: var(--font-size-normal);
+            font-weight: 600;
+            touch-action: manipulation;
+        }
+
+        .long-press-btn:active {
+            background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
+            transform: scale(0.95);
+        }
+
+        /* 播放提示 */
+        .play-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: min(4vw, 20px) min(5vw, 30px);
+            border-radius: min(3vw, 15px);
+            font-size: var(--font-size-normal);
+            text-align: center;
+            display: none;
+            z-index: 60;
+            line-height: 1.4;
+        }
+
+        .play-hint.active {
+            display: block;
+        }
+
+        /* 按鈕容器 */
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: min(3vw, 15px);
+            margin-top: min(4vw, 20px);
+            align-items: center;
+        }
+
+        @media (min-width: 768px) {
+            .button-container {
+                flex-direction: row;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .file-label {
+                min-width: min(30vw, 180px);
+            }
+        }
+
+        /* 特定環境適配 */
+        @media (max-width: 480px) {
+            :root {
+                --base-size: 1.2vw;
+            }
+            
+            .file-label {
+                min-width: 70vw;
+                padding: min(5vw, 25px) min(7vw, 35px);
+            }
+        }
+
+        @media (min-width: 1200px) {
+            :root {
+                --base-size: 0.8vw;
+            }
+            
+            .control-btn {
+                font-size: min(4vw, 28px);
+            }
+            
+            .play-btn {
+                font-size: min(5vw, 32px);
+            }
+        }
+
+        /* 強制控制元素在行動設備上可見 */
+        @media (max-width: 768px) and (hover: none) {
+            .controls-overlay {
+                opacity: 1 !important;
+            }
+            
+            .back-btn, .screenshot-btn {
+                opacity: 1 !important;
+            }
+            
+            .frame-info {
+                opacity: 1 !important;
+            }
+        }
+
+        /* 高DPI屏幕優化 */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .control-btn, .file-label, .frame-control-btn {
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        }
+    </style>
 </head>
 <body>
+    <!-- 影片容器 -->
+    <div class="video-container">
+        <!-- 移除muted属性，让视频有声音 -->
+        <video id="videoPlayer" playsinline webkit-playsinline></video>
+        
+        <!-- 載入指示器 -->
+        <div class="loading" id="loadingIndicator">載入中...</div>
+        
+        <!-- 播放提示 -->
+        <div class="play-hint" id="playHint">
+            <i class="fas fa-play-circle" style="font-size: min(8vw, 40px); margin-bottom: min(2vw, 10px);"></i><br>
+            點擊播放按鈕開始播放
+        </div>
+        
+        <!-- 控制覆蓋層 -->
+        <div class="controls-overlay">
+            <div class="main-controls">
+                <button class="control-btn" id="backBtn">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                <button class="control-btn long-press-trigger" id="prevFrameBtnMain" data-direction="-1">
+                    <i class="fas fa-step-backward"></i>
+                </button>
+                
+                <button class="control-btn play-btn" id="playPauseBtn">
+                    <i class="fas fa-play"></i>
+                </button>
+                
+                <button class="control-btn long-press-trigger" id="nextFrameBtnMain" data-direction="1">
+                    <i class="fas fa-step-forward"></i>
+                </button>
+                
+                <button class="control-btn" id="speedBtn">
+                    <i class="fas fa-running"></i>
+                </button>
 
-<div class="video-container">
-  <video id="videoPlayer" preload="auto" playsinline webkit-playsinline controlslist="nodownload">
-    <source src="https://cdn.pixabay.com/video/2021/06/04/75838-558496502_large.mp4" type="video/mp4">
-    您的瀏覽器不支援影片播放。
-  </video>
+                <!-- 音量控制按钮 -->
+                <button class="control-btn" id="volumeBtn">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 進度條區域 - 放在控制項下方 -->
+        <div class="progress-area">
+            <div class="time-display">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+        
+        <!-- 返回按鈕 -->
+        <button class="back-btn" id="backButton">
+            <i class="fas fa-chevron-left"></i>
+            Back
+        </button>
+        
+        <!-- 截圖按鈕 -->
+        <button class="screenshot-btn" id="screenshotBtn">
+            <i class="fas fa-camera"></i>
+            Screenshot
+        </button>
+        
+        <!-- 幀號顯示 - 完全透明 -->
+        <div class="frame-info" id="frameInfo">
+            幀號: <span id="frameNumber">0</span>
+        </div>
+        
+        <!-- 速度控制面板 -->
+        <div class="speed-panel" id="speedPanel">
+            <button class="speed-option" data-speed="2">2x Speed</button>
+            <button class="speed-option active" data-speed="1">1x Speed</button>
+            <button class="speed-option" data-speed="0.5">0.5x Speed</button>
+            <button class="speed-option" data-speed="0.1">0.1x Speed</button>
+            <button class="speed-option" data-speed="frame" id="frameByFrameBtn">Frame by Frame</button>
+        </div>
 
-  <div class="controls">
-    <button id="playPauseBtn">▶️ 播放</button>
-    <button id="rewindBtn">⏪ -5秒</button>
-    <button id="forwardBtn">⏩ +5秒</button>
-    <button id="prevFrameBtn">◀️ 上一幀</button>
-    <button id="nextFrameBtn">▶️ 下一幀</button>
-    <select id="speedSelect">
-      <option value="0.5">0.5×</option>
-      <option value="1" selected>1×</option>
-      <option value="1.5">1.5×</option>
-      <option value="2">2×</option>
-    </select>
-    <button id="screenshotBtn">📸 截圖</button>
-    <button id="fullscreenBtn">⛶ 全螢幕</button>
-  </div>
-</div>
+        <!-- 逐幀控制按鈕 - 完全透明 -->
+        <div class="frame-controls" id="frameControls">
+            <button class="frame-control-btn long-press-trigger" id="prevFrameBtn" data-direction="-1">
+                <i class="fas fa-step-backward"></i> 上一幀
+            </button>
+            <button class="frame-control-btn" id="autoFrameBtn">
+                <i class="fas fa-play"></i> 自動播放
+            </button>
+            <button class="frame-control-btn long-press-trigger" id="nextFrameBtn" data-direction="1">
+                下一幀 <i class="fas fa-step-forward"></i>
+            </button>
+            <button class="frame-control-btn" id="exitFrameBtn">
+                <i class="fas fa-times"></i> 退出
+            </button>
+        </div>
 
-<script>
-const video = document.getElementById('videoPlayer');
-const playPauseBtn = document.getElementById('playPauseBtn');
-const rewindBtn = document.getElementById('rewindBtn');
-const forwardBtn = document.getElementById('forwardBtn');
-const prevFrameBtn = document.getElementById('prevFrameBtn');
-const nextFrameBtn = document.getElementById('nextFrameBtn');
-const speedSelect = document.getElementById('speedSelect');
-const screenshotBtn = document.getElementById('screenshotBtn');
-const fullscreenBtn = document.getElementById('fullscreenBtn');
+        <!-- 長按控制提示 - 完全透明 -->
+        <div class="long-press-controls" id="longPressControls">
+            <div class="long-press-btn" id="longPressIndicator">
+                1秒1幀播放中...
+            </div>
+        </div>
+    </div>
+    
+    <!-- 檔案選擇器 -->
+    <div class="file-selector" id="fileSelector">
+        <h2>選擇影片</h2>
+        
+        <div class="button-container">
+            <label for="fileInput" class="file-label">
+                <i class="fas fa-folder-open"></i> 選擇影片檔案
+            </label>
+            
+            <label for="cameraInput" class="file-label" id="cameraLabel">
+                <i class="fas fa-camera"></i> 拍攝影片
+            </label>
+        </div>
+        
+        <input type="file" id="fileInput" accept="video/*">
+        <input type="file" id="cameraInput" accept="video/*" capture="environment">
+        
+        <div class="file-info" id="fileInfo">請選擇影片檔案或拍攝新影片</div>
+        <div class="file-info" id="lastPositionInfo" style="display:none; color:#ffcc00;">
+            上次播放位置: <span id="lastPositionTime">0:00</span>
+        </div>
+        
+        <div class="file-info" style="margin-top: min(3vw, 15px); font-size: var(--font-size-normal); color: #ffcc00;">
+            <i class="fas fa-info-circle"></i> 支援 MP4, MOV 等影片格式
+        </div>
+    </div>
 
-// 播放暫停
-playPauseBtn.addEventListener('click', () => {
-  if (video.paused) {
-    video.play();
-    playPauseBtn.textContent = '⏸ 暫停';
-  } else {
-    video.pause();
-    playPauseBtn.textContent = '▶️ 播放';
-  }
-});
+    <!-- 成功訊息 -->
+    <div class="success-message" id="successMessage">
+        截圖已自動保存到相簿
+    </div>
 
-// 倒退/快轉
-rewindBtn.onclick = () => video.currentTime = Math.max(0, video.currentTime - 5);
-forwardBtn.onclick = () => video.currentTime = Math.min(video.duration, video.currentTime + 5);
+    <script>
+        // 獲取元素
+        const videoPlayer = document.getElementById('videoPlayer');
+        const fileInput = document.getElementById('fileInput');
+        const cameraInput = document.getElementById('cameraInput');
+        const cameraLabel = document.getElementById('cameraLabel');
+        const fileInfo = document.getElementById('fileInfo');
+        const lastPositionInfo = document.getElementById('lastPositionInfo');
+        const lastPositionTime = document.getElementById('lastPositionTime');
+        const fileSelector = document.getElementById('fileSelector');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const backBtn = document.getElementById('backBtn');
+        const backButton = document.getElementById('backButton');
+        const prevFrameBtnMain = document.getElementById('prevFrameBtnMain');
+        const nextFrameBtnMain = document.getElementById('nextFrameBtnMain');
+        const speedBtn = document.getElementById('speedBtn');
+        const speedPanel = document.getElementById('speedPanel');
+        const speedOptions = document.querySelectorAll('.speed-option');
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
+        const currentTime = document.getElementById('currentTime');
+        const duration = document.getElementById('duration');
+        const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+        const screenshotBtn = document.getElementById('screenshotBtn');
+        const frameInfo = document.getElementById('frameInfo');
+        const frameNumber = document.getElementById('frameNumber');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const successMessage = document.getElementById('successMessage');
+        const frameByFrameBtn = document.getElementById('frameByFrameBtn');
+        const frameControls = document.getElementById('frameControls');
+        const prevFrameBtn = document.getElementById('prevFrameBtn');
+        const nextFrameBtn = document.getElementById('nextFrameBtn');
+        const autoFrameBtn = document.getElementById('autoFrameBtn');
+        const exitFrameBtn = document.getElementById('exitFrameBtn');
+        const longPressControls = document.getElementById('longPressControls');
+        const longPressIndicator = document.getElementById('longPressIndicator');
+        const playHint = document.getElementById('playHint');
+        
+        // 音量控制按钮
+        const volumeBtn = document.getElementById('volumeBtn');
 
-// 調速
-speedSelect.onchange = () => video.playbackRate = parseFloat(speedSelect.value);
+        // 變數
+        let currentSpeed = 1;
+        let isPlaying = false;
+        let frameCount = 0;
+        let videoFPS = 30;
+        let isSpeedPanelOpen = false;
+        let isFrameByFrameMode = false;
+        let isAutoFrameMode = false;
+        let frameInterval;
+        let longPressInterval;
+        let longPressTimeout;
+        let currentFile = null;
+        let lastPlayPosition = 0;
+        const FRAME_DELAY = 1000; // 1秒1幀
+        let isMuted = false; // 静音状态
 
-// 逐幀操作（30fps 假設）
-prevFrameBtn.onclick = () => { video.pause(); video.currentTime = Math.max(0, video.currentTime - 1/30); };
-nextFrameBtn.onclick = () => { video.pause(); video.currentTime = Math.min(video.duration, video.currentTime + 1/30); };
+        // 檢測設備類型
+        function isiPhone() {
+            return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+        }
 
-// 截圖
-screenshotBtn.onclick = () => {
-  const canvas = document.createElement('canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const link = document.createElement('a');
-  link.download = 'screenshot.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-};
+        // 檢測是否為行動設備
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
 
-// 🔥 真全螢幕：iPhone 用 webkitEnterFullscreen，其餘用標準 API
-fullscreenBtn.onclick = async () => {
-  try {
-    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      if (video.webkitEnterFullscreen) {
-        video.webkitEnterFullscreen(); // ✅ iPhone 真全螢幕（消除上下列）
-        return;
-      }
-    }
-    if (document.fullscreenElement) {
-      await document.exitFullscreen();
-    } else if (video.requestFullscreen) {
-      await video.requestFullscreen();
-    } else if (video.webkitRequestFullscreen) {
-      await video.webkitRequestFullscreen();
-    } else if (video.msRequestFullscreen) {
-      await video.msRequestFullscreen();
-    }
-  } catch (e) {
-    console.error('全螢幕錯誤:', e);
-  }
-};
+        // 初始化
+        function init() {
+            updateTime();
+            setupEventListeners();
+            loadLastPosition();
+            
+            // 所有設備都顯示檔案選擇器，不預載任何影片
+            fileSelector.classList.remove('hidden');
+            
+            // 根據設備類型調整界面
+            if (isMobile()) {
+                initForMobile();
+            } else {
+                initForDesktop();
+            }
+        }
 
-// 狀態變化更新按鈕
-video.addEventListener('pause', () => playPauseBtn.textContent = '▶️ 播放');
-video.addEventListener('play', () => playPauseBtn.textContent = '⏸ 暫停');
-</script>
+        // 行動設備初始化
+        function initForMobile() {
+            console.log('檢測到行動設備');
+            // 在行動設備上顯示拍攝按鈕
+            cameraLabel.style.display = 'inline-block';
+            
+            // 優化行動設備上的控制顯示
+            document.querySelectorAll('.controls-overlay, .back-btn, .screenshot-btn, .frame-info').forEach(el => {
+                el.style.opacity = '1';
+            });
+        }
+
+        // 桌面初始化
+        function initForDesktop() {
+            console.log('檢測到桌面設備');
+            // 在桌面上隱藏拍攝按鈕（桌面不支援）
+            cameraLabel.style.display = 'none';
+        }
+
+        // 設置事件監聽器
+        function setupEventListeners() {
+            // 檔案選擇處理
+            fileInput.addEventListener('change', handleFileSelect);
+            cameraInput.addEventListener('change', handleFileSelect);
+            
+            // 播放控制
+            playPauseBtn.addEventListener('click', togglePlayPause);
+            
+            // 長按事件
+            setupLongPressEvents();
+            
+            // 速度控制
+            speedBtn.addEventListener('click', toggleSpeedPanel);
+            speedOptions.forEach(option => {
+                option.addEventListener('click', handleSpeedSelect);
+            });
+            
+            // 返回按鈕
+            backBtn.addEventListener('click', showFileSelector);
+            backButton.addEventListener('click', showFileSelector);
+            
+            // 截圖功能
+            screenshotBtn.addEventListener('click', captureScreenshot);
+            
+            // 進度條控制
+            progressContainer.addEventListener('click', handleProgressClick);
+            
+            // 影片事件
+            videoPlayer.addEventListener('loadedmetadata', handleVideoLoaded);
+            videoPlayer.addEventListener('timeupdate', updateVideoProgress);
+            videoPlayer.addEventListener('error', handleVideoError);
+            videoPlayer.addEventListener('click', togglePlayPause);
+            videoPlayer.addEventListener('canplay', handleCanPlay);
+            
+            // 逐幀控制
+            frameByFrameBtn.addEventListener('click', enableFrameByFrame);
+            autoFrameBtn.addEventListener('click', toggleAutoFrame);
+            exitFrameBtn.addEventListener('click', disableFrameByFrame);
+            
+            // 點擊其他地方隱藏速度面板
+            document.addEventListener('click', (e) => {
+                if (!speedBtn.contains(e.target) && !speedPanel.contains(e.target)) {
+                    hideSpeedPanel();
+                }
+            });
+            
+            // 音量控制事件
+            volumeBtn.addEventListener('click', toggleMute);
+        }
+
+        // 影片可以播放時
+        function handleCanPlay() {
+            console.log('影片可以播放了');
+            playHint.classList.remove('active');
+            
+            // 嘗試播放
+            attemptAutoPlay();
+        }
+
+        // 嘗試自動播放
+        function attemptAutoPlay() {
+            videoPlayer.play().then(() => {
+                console.log('自動播放成功');
+                isPlaying = true;
+                updatePlayPauseButton();
+            }).catch(error => {
+                console.log('自動播放被阻止:', error);
+                playHint.classList.add('active');
+            });
+        }
+
+        // 設置長按事件
+        function setupLongPressEvents() {
+            const longPressButtons = document.querySelectorAll('.long-press-trigger');
+            
+            longPressButtons.forEach(button => {
+                // 觸摸開始
+                button.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    const direction = parseInt(this.dataset.direction);
+                    startLongPress(direction);
+                });
+                
+                // 觸摸結束
+                button.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    stopLongPress();
+                });
+                
+                // 觸摸取消
+                button.addEventListener('touchcancel', function(e) {
+                    e.preventDefault();
+                    stopLongPress();
+                });
+                
+                // 鼠標按下
+                button.addEventListener('mousedown', function() {
+                    const direction = parseInt(this.dataset.direction);
+                    startLongPress(direction);
+                });
+                
+                // 鼠標釋放
+                button.addEventListener('mouseup', stopLongPress);
+                button.addEventListener('mouseleave', stopLongPress);
+            });
+        }
+
+        // 開始長按
+        function startLongPress(direction) {
+            // 先立即執行一次
+            seekFrame(direction);
+            
+            // 設置長按超時
+            longPressTimeout = setTimeout(() => {
+                longPressControls.classList.add('active');
+                longPressIndicator.textContent = direction > 0 ? 
+                    "1秒1幀快進中..." : "1秒1幀快退中...";
+                
+                // 開始連續播放
+                longPressInterval = setInterval(() => {
+                    seekFrame(direction);
+                }, FRAME_DELAY);
+            }, 500); // 長按500ms後開始連續播放
+        }
+
+        // 停止長按
+        function stopLongPress() {
+            if (longPressTimeout) {
+                clearTimeout(longPressTimeout);
+                longPressTimeout = null;
+            }
+            
+            if (longPressInterval) {
+                clearInterval(longPressInterval);
+                longPressInterval = null;
+            }
+            
+            longPressControls.classList.remove('active');
+        }
+
+        // 更新時間顯示 - 移除相關功能
+        function updateTime() {
+            // 不再需要更新狀態欄時間
+        }
+
+        // 檔案選擇處理
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                currentFile = file;
+                loadingIndicator.classList.add('active');
+                const fileURL = URL.createObjectURL(file);
+                videoPlayer.src = fileURL;
+                
+                // 顯示檔案資訊
+                const sourceType = e.target.id === 'cameraInput' ? '拍攝的影片' : '選擇的影片';
+                fileInfo.textContent = `${sourceType}: ${file.name}`;
+                playHint.classList.add('active');
+                
+                // 恢復上次播放位置
+                if (lastPlayPosition > 0) {
+                    videoPlayer.addEventListener('loadedmetadata', function restorePosition() {
+                        videoPlayer.currentTime = Math.min(lastPlayPosition, videoPlayer.duration - 1);
+                        videoPlayer.removeEventListener('loadedmetadata', restorePosition);
+                    });
+                }
+            }
+        }
+
+        // 影片載入完成
+        function handleVideoLoaded() {
+            console.log('影片載入完成，時長:', videoPlayer.duration);
+            fileSelector.classList.add('hidden');
+            updateDurationDisplay();
+            estimateFPS();
+            loadingIndicator.classList.remove('active');
+        }
+
+        // 估算影片FPS
+        function estimateFPS() {
+            videoFPS = Math.round(videoPlayer.videoWidth / 100) * 10;
+            if (videoFPS < 24) videoFPS = 24;
+            if (videoFPS > 60) videoFPS = 60;
+            console.log('估算FPS:', videoFPS);
+        }
+
+        // 更新幀號
+        function updateFrameNumber() {
+            frameCount = Math.floor(videoPlayer.currentTime * videoFPS);
+            frameNumber.textContent = frameCount.toLocaleString();
+        }
+
+        // 播放/暫停切換
+        function togglePlayPause() {
+            if (isFrameByFrameMode) {
+                disableFrameByFrame();
+                return;
+            }
+
+            if (videoPlayer.paused) {
+                videoPlayer.play().then(() => {
+                    isPlaying = true;
+                    updatePlayPauseButton();
+                    playHint.classList.remove('active');
+                }).catch(error => {
+                    console.log('播放失敗:', error);
+                    playHint.classList.add('active');
+                });
+            } else {
+                videoPlayer.pause();
+                isPlaying = false;
+                updatePlayPauseButton();
+            }
+        }
+
+        // 更新播放/暫停按鈕
+        function updatePlayPauseButton() {
+            playPauseBtn.innerHTML = isPlaying ? 
+                '<i class="fas fa-pause"></i>' : 
+                '<i class="fas fa-play"></i>';
+        }
+
+        // 以幀為單位快進快退
+        function seekFrame(frames) {
+            const frameTime = 1 / videoFPS;
+            const newTime = videoPlayer.currentTime + (frameTime * frames);
+            
+            // 確保時間在合法範圍內
+            if (newTime < 0) {
+                videoPlayer.currentTime = 0;
+            } else if (newTime > videoPlayer.duration) {
+                videoPlayer.currentTime = videoPlayer.duration;
+            } else {
+                videoPlayer.currentTime = newTime;
+            }
+            
+            updateFrameNumber();
+        }
+
+        // 顯示/隱藏速度面板
+        function toggleSpeedPanel() {
+            isSpeedPanelOpen = !isSpeedPanelOpen;
+            speedPanel.classList.toggle('active', isSpeedPanelOpen);
+        }
+
+        function hideSpeedPanel() {
+            isSpeedPanelOpen = false;
+            speedPanel.classList.remove('active');
+        }
+
+        // 速度選擇
+        function handleSpeedSelect(e) {
+            const speed = e.target.dataset.speed;
+            
+            if (speed === 'frame') {
+                enableFrameByFrame();
+            } else {
+                currentSpeed = parseFloat(speed);
+                videoPlayer.playbackRate = currentSpeed;
+                disableFrameByFrame();
+            }
+            
+            // 更新活動狀態
+            speedOptions.forEach(opt => opt.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            hideSpeedPanel();
+        }
+
+        // 啟用逐幀模式
+        function enableFrameByFrame() {
+            isFrameByFrameMode = true;
+            videoPlayer.pause();
+            isPlaying = false;
+            updatePlayPauseButton();
+            frameControls.classList.add('active');
+            hideSpeedPanel();
+        }
+
+        // 禁用逐幀模式
+        function disableFrameByFrame() {
+            isFrameByFrameMode = false;
+            isAutoFrameMode = false;
+            frameControls.classList.remove('active');
+            autoFrameBtn.classList.remove('active');
+            autoFrameBtn.innerHTML = '<i class="fas fa-play"></i> 自動播放';
+            
+            // 停止自動播放
+            if (frameInterval) {
+                clearInterval(frameInterval);
+                frameInterval = null;
+            }
+            
+            // 重置活動狀態
+            speedOptions.forEach(opt => {
+                if (opt.dataset.speed === '1') {
+                    opt.classList.add('active');
+                } else {
+                    opt.classList.remove('active');
+                }
+            });
+        }
+
+        // 切換自動逐幀播放
+        function toggleAutoFrame() {
+            isAutoFrameMode = !isAutoFrameMode;
+            
+            if (isAutoFrameMode) {
+                // 開始自動播放
+                autoFrameBtn.classList.add('active');
+                autoFrameBtn.innerHTML = '<i class="fas fa-pause"></i> 暫停';
+                startAutoFramePlayback();
+            } else {
+                // 停止自動播放
+                autoFrameBtn.classList.remove('active');
+                autoFrameBtn.innerHTML = '<i class="fas fa-play"></i> 自動播放';
+                if (frameInterval) {
+                    clearInterval(frameInterval);
+                    frameInterval = null;
+                }
+            }
+        }
+
+        // 開始自動逐幀播放 (1秒1幀)
+        function startAutoFramePlayback() {
+            if (frameInterval) {
+                clearInterval(frameInterval);
+            }
+            
+            frameInterval = setInterval(() => {
+                if (videoPlayer.currentTime >= videoPlayer.duration) {
+                    // 到達影片結尾，停止播放
+                    toggleAutoFrame();
+                    return;
+                }
+                
+                seekFrame(1);
+            }, FRAME_DELAY);
+        }
+
+        // 顯示檔案選擇器
+        function showFileSelector() {
+            if (videoPlayer.src) {
+                // 保存當前播放位置
+                saveLastPosition();
+                fileSelector.classList.remove('hidden');
+                videoPlayer.pause();
+                isPlaying = false;
+                updatePlayPauseButton();
+                disableFrameByFrame();
+            }
+        }
+
+        // 保存最後播放位置
+        function saveLastPosition() {
+            lastPlayPosition = videoPlayer.currentTime;
+            localStorage.setItem('lastVideoPosition', lastPlayPosition.toString());
+            localStorage.setItem('lastVideoFile', currentFile ? currentFile.name : '');
+        }
+
+        // 載入最後播放位置
+        function loadLastPosition() {
+            const savedPosition = localStorage.getItem('lastVideoPosition');
+            const savedFile = localStorage.getItem('lastVideoFile');
+            
+            if (savedPosition && savedFile) {
+                lastPlayPosition = parseFloat(savedPosition);
+                lastPositionTime.textContent = formatTime(lastPlayPosition);
+                lastPositionInfo.style.display = 'block';
+            }
+        }
+
+        // 更新影片進度
+        function updateVideoProgress() {
+            const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+            progressBar.style.width = `${percent}%`;
+            updateTimeDisplay();
+            updateFrameNumber();
+        }
+
+        // 進度條點擊
+        function handleProgressClick(e) {
+            if (isFrameByFrameMode) return;
+            const rect = progressContainer.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            videoPlayer.currentTime = percent * videoPlayer.duration;
+        }
+
+        // 更新時間顯示
+        function updateTimeDisplay() {
+            currentTime.textContent = formatTime(videoPlayer.currentTime);
+        }
+
+        // 更新總時長顯示
+        function updateDurationDisplay() {
+            duration.textContent = formatTime(videoPlayer.duration);
+        }
+
+        // 格式化時間
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "0:00";
+            
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // 截圖功能 - 直接保存
+        function captureScreenshot() {
+            if (!videoPlayer.src || videoPlayer.readyState < 2) {
+                alert('請先選擇並載入影片檔案');
+                return;
+            }
+            
+            try {
+                // 創建畫布
+                const canvas = document.createElement('canvas');
+                canvas.width = videoPlayer.videoWidth;
+                canvas.height = videoPlayer.videoHeight;
+                const ctx = canvas.getContext('2d');
+                
+                // 繪製影片畫面到畫布
+                ctx.drawImage(videoPlayer, 0, 0, canvas.width, canvas.height);
+                
+                // 轉換為高品質JPEG並自動保存
+                canvas.toBlob(function(blob) {
+                    // 創建下載鏈接
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                    link.download = `screenshot-${timestamp}.jpg`;
+                    link.href = url;
+                    
+                    // 自動觸發下載
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // 釋放URL對象
+                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                    
+                    // 顯示成功訊息
+                    showSuccessMessage();
+                }, 'image/jpeg', 1.0);
+                
+            } catch (error) {
+                console.error('截圖失敗:', error);
+                alert('截圖失敗，請重試');
+            }
+        }
+
+        // 顯示成功訊息
+        function showSuccessMessage() {
+            successMessage.classList.add('active');
+            setTimeout(() => {
+                successMessage.classList.remove('active');
+            }, 2000);
+        }
+
+        // 處理影片錯誤
+        function handleVideoError() {
+            loadingIndicator.classList.remove('active');
+            console.error('影片錯誤:', videoPlayer.error);
+            alert('影片載入失敗，請檢查檔案格式或選擇其他檔案。');
+        }
+
+        // 静音/取消静音功能
+        function toggleMute() {
+            isMuted = !isMuted;
+            videoPlayer.muted = isMuted;
+            
+            // 更新音量图标
+            const volumeIcon = volumeBtn.querySelector('i');
+            if (isMuted) {
+                volumeIcon.className = 'fas fa-volume-mute';
+            } else {
+                volumeIcon.className = 'fas fa-volume-up';
+            }
+        }
+
+        // 初始化應用
+        init();
+
+        // 離開頁面前保存位置
+        window.addEventListener('beforeunload', saveLastPosition);
+    </script>
 </body>
 </html>
