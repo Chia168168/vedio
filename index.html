@@ -26,6 +26,12 @@
             -webkit-tap-highlight-color: transparent;
         }
         
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #000;
@@ -39,22 +45,25 @@
             font-size: var(--font-size-normal);
         }
         
-        /* 影片容器 */
+        /* 影片容器 - 全螢幕滿版 */
         .video-container {
-            position: relative;
-            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
             height: 100vh;
             height: 100dvh;
             background: #000;
             display: flex;
             justify-content: center;
             align-items: center;
+            z-index: 1;
         }
         
         video {
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            object-fit: cover; /* 改為cover以實現全螢幕滿版 */
         }
         
         /* 控制欄 */
@@ -64,38 +73,11 @@
             left: 0;
             right: 0;
             background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-            padding: min(5vw, 40px) min(4vw, 25px) min(12vw, 100px);
+            padding: min(5vw, 40px) min(4vw, 25px) min(8vw, 60px);
             display: flex;
             flex-direction: column;
             gap: min(4vw, 30px);
-        }
-        
-        /* 進度條 */
-        .progress-container {
-            width: 100%;
-            height: min(1.5vw, 8px);
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: min(1vw, 4px);
-            overflow: hidden;
-            margin-bottom: min(3vw, 20px);
-            touch-action: none;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            background: #ff375f;
-            width: 30%;
-            border-radius: min(1vw, 4px);
-            transition: width 0.1s;
-        }
-        
-        .time-display {
-            display: flex;
-            justify-content: space-between;
-            font-size: var(--font-size-normal);
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: min(4vw, 30px);
-            font-weight: 600;
+            z-index: 10;
         }
         
         /* 主要控制按鈕 */
@@ -131,6 +113,43 @@
             height: var(--play-size);
             background: rgba(255, 255, 255, 0.1); /* 播放按钮保持轻微背景 */
             font-size: min(7vw, 40px);
+        }
+        
+        /* 進度條 - 移到控制項下方 */
+        .progress-area {
+            position: absolute;
+            bottom: min(2vw, 15px);
+            left: min(4vw, 25px);
+            right: min(4vw, 25px);
+            display: flex;
+            flex-direction: column;
+            gap: min(2vw, 10px);
+            z-index: 10;
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: min(1.5vw, 8px);
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: min(1vw, 4px);
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: #ff375f;
+            width: 30%;
+            border-radius: min(1vw, 4px);
+            transition: width 0.1s;
+        }
+        
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: var(--font-size-normal);
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
         }
         
         /* 速度控制面板 */
@@ -525,14 +544,6 @@
         
         <!-- 控制覆蓋層 -->
         <div class="controls-overlay">
-            <div class="progress-container" id="progressContainer">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-            <div class="time-display">
-                <span id="currentTime">0:00</span>
-                <span id="duration">0:00</span>
-            </div>
-            
             <div class="main-controls">
                 <button class="control-btn" id="backBtn">
                     <i class="fas fa-chevron-left"></i>
@@ -558,6 +569,17 @@
                 <button class="control-btn" id="volumeBtn">
                     <i class="fas fa-volume-up"></i>
                 </button>
+            </div>
+        </div>
+        
+        <!-- 進度條區域 - 放在控制項下方 -->
+        <div class="progress-area">
+            <div class="time-display">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
             </div>
         </div>
         
