@@ -16,6 +16,7 @@
             --padding-normal: min(4vw, 20px);
             --padding-large: min(5vw, 25px);
             --border-radius: min(3vw, 15px);
+            --button-transparency: 0.8; /* 新增：按钮透明度变量 */
         }
         
         * {
@@ -108,7 +109,7 @@
         }
         
         .control-btn {
-            background: none;
+            background: rgba(28, 28, 30, var(--button-transparency));
             border: none;
             color: white;
             font-size: min(6vw, 34px);
@@ -120,6 +121,7 @@
             border-radius: 50%;
             transition: all 0.2s;
             touch-action: manipulation;
+            backdrop-filter: blur(10px);
         }
         
         .control-btn:active {
@@ -160,7 +162,7 @@
         }
         
         .speed-option {
-            background: none;
+            background: rgba(28, 28, 30, var(--button-transparency));
             border: none;
             color: white;
             padding: min(3vw, 18px) min(4vw, 24px);
@@ -169,6 +171,7 @@
             text-align: left;
             transition: background 0.2s;
             touch-action: manipulation;
+            backdrop-filter: blur(10px);
         }
         
         .speed-option:active {
@@ -176,7 +179,7 @@
         }
         
         .speed-option.active {
-            background: #ff375f;
+            background: rgba(255, 55, 95, var(--button-transparency));
             font-weight: 600;
         }
         
@@ -185,7 +188,7 @@
             position: absolute;
             top: min(4vw, 25px);
             left: min(4vw, 25px);
-            background: rgba(28, 28, 30, 0.9);
+            background: rgba(28, 28, 30, var(--button-transparency));
             backdrop-filter: blur(30px);
             border: none;
             color: white;
@@ -227,7 +230,7 @@
         
         .file-label {
             display: inline-block;
-            background: #ff375f;
+            background: rgba(255, 55, 95, var(--button-transparency));
             color: white;
             padding: min(4vw, 22px) min(6vw, 40px);
             border-radius: min(3vw, 16px);
@@ -239,11 +242,12 @@
             margin: min(2vw, 10px);
             text-align: center;
             min-width: min(40vw, 200px);
+            backdrop-filter: blur(10px);
         }
         
         .file-label:active {
             transform: scale(0.96);
-            background: #e53256;
+            background: rgba(229, 50, 86, var(--button-transparency));
         }
         
         #fileInput, #cameraInput {
@@ -267,7 +271,7 @@
             position: absolute;
             top: min(4vw, 25px);
             right: min(4vw, 25px);
-            background: rgba(28, 28, 30, 0.9);
+            background: rgba(28, 28, 30, var(--button-transparency));
             backdrop-filter: blur(30px);
             border: none;
             color: white;
@@ -290,7 +294,7 @@
             position: absolute;
             top: min(12vw, 80px);
             left: min(4vw, 25px);
-            background: rgba(28, 28, 30, 0.85);
+            background: rgba(28, 28, 30, var(--button-transparency));
             backdrop-filter: blur(20px);
             padding: min(3vw, 16px) min(4vw, 22px);
             border-radius: min(2vw, 12px);
@@ -352,7 +356,7 @@
             position: absolute;
             bottom: min(25vw, 200px);
             left: min(4vw, 25px);
-            background: rgba(28, 28, 30, 0.9);
+            background: rgba(28, 28, 30, var(--button-transparency));
             backdrop-filter: blur(30px);
             border-radius: min(4vw, 20px);
             padding: min(3vw, 15px);
@@ -367,7 +371,7 @@
         }
 
         .frame-control-btn {
-            background: #ff375f;
+            background: rgba(255, 55, 95, var(--button-transparency));
             border: none;
             color: white;
             padding: min(3vw, 15px) min(4vw, 20px);
@@ -377,15 +381,16 @@
             touch-action: manipulation;
             flex: 1;
             min-width: min(25vw, 120px);
+            backdrop-filter: blur(10px);
         }
 
         .frame-control-btn:active {
-            background: #e53256;
+            background: rgba(229, 50, 86, var(--button-transparency));
             transform: scale(0.95);
         }
 
         .auto-frame-btn.active {
-            background: #4CAF50;
+            background: rgba(76, 175, 80, var(--button-transparency));
         }
 
         /* 長按控制 */
@@ -394,7 +399,7 @@
             bottom: min(40vw, 320px);
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(28, 28, 30, 0.9);
+            background: rgba(28, 28, 30, var(--button-transparency));
             backdrop-filter: blur(30px);
             border-radius: min(4vw, 20px);
             padding: min(3vw, 15px);
@@ -408,7 +413,7 @@
         }
 
         .long-press-btn {
-            background: #ff375f;
+            background: rgba(255, 55, 95, var(--button-transparency));
             border: none;
             color: white;
             padding: min(3vw, 15px) min(4vw, 25px);
@@ -416,10 +421,11 @@
             font-size: var(--font-size-normal);
             font-weight: 600;
             touch-action: manipulation;
+            backdrop-filter: blur(10px);
         }
 
         .long-press-btn:active {
-            background: #e53256;
+            background: rgba(229, 50, 86, var(--button-transparency));
             transform: scale(0.95);
         }
 
@@ -512,12 +518,46 @@
                 border: 1px solid rgba(255, 255, 255, 0.1);
             }
         }
+
+        /* 音量控制 */
+        .volume-control {
+            position: absolute;
+            bottom: min(25vw, 200px);
+            left: min(4vw, 25px);
+            background: rgba(28, 28, 30, var(--button-transparency));
+            backdrop-filter: blur(30px);
+            border-radius: min(4vw, 20px);
+            padding: min(3vw, 15px);
+            display: flex;
+            align-items: center;
+            gap: min(2vw, 12px);
+            z-index: 50;
+        }
+
+        .volume-slider {
+            width: min(20vw, 120px);
+            height: min(1vw, 6px);
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: min(1vw, 4px);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: min(3vw, 20px);
+            height: min(3vw, 20px);
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <!-- 影片容器 -->
     <div class="video-container">
-        <video id="videoPlayer" playsinline webkit-playsinline muted></video>
+        <!-- 移除muted属性，让视频有声音 -->
+        <video id="videoPlayer" playsinline webkit-playsinline></video>
         
         <!-- 載入指示器 -->
         <div class="loading" id="loadingIndicator">載入中...</div>
@@ -558,6 +598,11 @@
                 <button class="control-btn" id="speedBtn">
                     <i class="fas fa-running"></i>
                 </button>
+
+                <!-- 新增音量控制按钮 -->
+                <button class="control-btn" id="volumeBtn">
+                    <i class="fas fa-volume-up"></i>
+                </button>
             </div>
         </div>
         
@@ -585,6 +630,12 @@
             <button class="speed-option" data-speed="0.5">0.5x Speed</button>
             <button class="speed-option" data-speed="0.1">0.1x Speed</button>
             <button class="speed-option" data-speed="frame" id="frameByFrameBtn">Frame by Frame</button>
+        </div>
+
+        <!-- 音量控制面板 -->
+        <div class="volume-control" id="volumeControl">
+            <i class="fas fa-volume-up"></i>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.1" value="1">
         </div>
 
         <!-- 逐幀控制按鈕 -->
@@ -680,6 +731,11 @@
         const longPressControls = document.getElementById('longPressControls');
         const longPressIndicator = document.getElementById('longPressIndicator');
         const playHint = document.getElementById('playHint');
+        
+        // 新增音量控制元素
+        const volumeBtn = document.getElementById('volumeBtn');
+        const volumeControl = document.getElementById('volumeControl');
+        const volumeSlider = document.getElementById('volumeSlider');
 
         // 變數
         let currentSpeed = 1;
@@ -788,6 +844,10 @@
                     hideSpeedPanel();
                 }
             });
+            
+            // 新增音量控制事件
+            volumeBtn.addEventListener('click', toggleVolumeControl);
+            volumeSlider.addEventListener('input', updateVolume);
         }
 
         // 影片可以播放時
@@ -1204,6 +1264,24 @@
             loadingIndicator.classList.remove('active');
             console.error('影片錯誤:', videoPlayer.error);
             alert('影片載入失敗，請檢查檔案格式或選擇其他檔案。');
+        }
+
+        // 新增音量控制功能
+        function toggleVolumeControl() {
+            volumeControl.style.display = volumeControl.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function updateVolume() {
+            videoPlayer.volume = volumeSlider.value;
+            // 更新音量图标
+            const volumeIcon = volumeBtn.querySelector('i');
+            if (videoPlayer.volume === 0) {
+                volumeIcon.className = 'fas fa-volume-mute';
+            } else if (videoPlayer.volume < 0.5) {
+                volumeIcon.className = 'fas fa-volume-down';
+            } else {
+                volumeIcon.className = 'fas fa-volume-up';
+            }
         }
 
         // 初始化應用
