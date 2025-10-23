@@ -16,7 +16,7 @@
             --padding-normal: min(4vw, 20px);
             --padding-large: min(5vw, 25px);
             --border-radius: min(3vw, 15px);
-            --button-transparency: 0.8; /* 新增：按钮透明度变量 */
+            --icon-transparency: 0.7; /* 图标透明度 */
         }
         
         * {
@@ -38,8 +38,6 @@
             touch-action: manipulation;
             font-size: var(--font-size-normal);
         }
-        
-        /* 移除狀態欄相關樣式 */
         
         /* 影片容器 */
         .video-container {
@@ -109,9 +107,9 @@
         }
         
         .control-btn {
-            background: rgba(28, 28, 30, var(--button-transparency));
+            background: transparent; /* 按钮背景全透明 */
             border: none;
-            color: white;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 图标半透明 */
             font-size: min(6vw, 34px);
             width: var(--control-size);
             height: var(--control-size);
@@ -121,19 +119,17 @@
             border-radius: 50%;
             transition: all 0.2s;
             touch-action: manipulation;
-            backdrop-filter: blur(10px);
         }
         
         .control-btn:active {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
             transform: scale(0.95);
         }
         
         .play-btn {
             width: var(--play-size);
             height: var(--play-size);
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.1); /* 播放按钮保持轻微背景 */
             font-size: min(7vw, 40px);
         }
         
@@ -162,24 +158,23 @@
         }
         
         .speed-option {
-            background: rgba(28, 28, 30, var(--button-transparency));
+            background: transparent; /* 按钮背景全透明 */
             border: none;
-            color: white;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 文字半透明 */
             padding: min(3vw, 18px) min(4vw, 24px);
             border-radius: min(3vw, 14px);
             font-size: var(--font-size-normal);
             text-align: left;
             transition: background 0.2s;
             touch-action: manipulation;
-            backdrop-filter: blur(10px);
         }
         
         .speed-option:active {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
         }
         
         .speed-option.active {
-            background: rgba(255, 55, 95, var(--button-transparency));
+            background: rgba(255, 55, 95, 0.2); /* 激活时轻微背景 */
             font-weight: 600;
         }
         
@@ -188,10 +183,9 @@
             position: absolute;
             top: min(4vw, 25px);
             left: min(4vw, 25px);
-            background: rgba(28, 28, 30, var(--button-transparency));
-            backdrop-filter: blur(30px);
+            background: transparent; /* 按钮背景全透明 */
             border: none;
-            color: white;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 图标和文字半透明 */
             padding: min(3vw, 18px) min(4vw, 25px);
             border-radius: min(3vw, 14px);
             font-size: var(--font-size-normal);
@@ -203,7 +197,7 @@
         }
         
         .back-btn:active {
-            background: rgba(28, 28, 30, 0.7);
+            background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
         }
         
         /* 檔案選擇 */
@@ -226,12 +220,13 @@
             margin-bottom: min(5vw, 30px);
             font-size: var(--font-size-xl);
             font-weight: 700;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 标题半透明 */
         }
         
         .file-label {
             display: inline-block;
-            background: rgba(255, 55, 95, var(--button-transparency));
-            color: white;
+            background: rgba(255, 55, 95, 0.2); /* 轻微背景 */
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 文字半透明 */
             padding: min(4vw, 22px) min(6vw, 40px);
             border-radius: min(3vw, 16px);
             cursor: pointer;
@@ -242,12 +237,12 @@
             margin: min(2vw, 10px);
             text-align: center;
             min-width: min(40vw, 200px);
-            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1); /* 轻微边框 */
         }
         
         .file-label:active {
             transform: scale(0.96);
-            background: rgba(229, 50, 86, var(--button-transparency));
+            background: rgba(229, 50, 86, 0.3);
         }
         
         #fileInput, #cameraInput {
@@ -271,10 +266,9 @@
             position: absolute;
             top: min(4vw, 25px);
             right: min(4vw, 25px);
-            background: rgba(28, 28, 30, var(--button-transparency));
-            backdrop-filter: blur(30px);
+            background: transparent; /* 按钮背景全透明 */
             border: none;
-            color: white;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 图标和文字半透明 */
             padding: min(3vw, 18px) min(4vw, 25px);
             border-radius: min(3vw, 14px);
             font-size: var(--font-size-normal);
@@ -286,7 +280,7 @@
         }
         
         .screenshot-btn:active {
-            background: rgba(28, 28, 30, 0.7);
+            background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
         }
         
         /* 幀號顯示 */
@@ -294,13 +288,14 @@
             position: absolute;
             top: min(12vw, 80px);
             left: min(4vw, 25px);
-            background: rgba(28, 28, 30, var(--button-transparency));
+            background: rgba(28, 28, 30, 0.5);
             backdrop-filter: blur(20px);
             padding: min(3vw, 16px) min(4vw, 22px);
             border-radius: min(2vw, 12px);
             font-size: var(--font-size-normal);
             font-weight: 600;
             z-index: 50;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 文字半透明 */
         }
         
         /* 載入指示器 */
@@ -356,7 +351,7 @@
             position: absolute;
             bottom: min(25vw, 200px);
             left: min(4vw, 25px);
-            background: rgba(28, 28, 30, var(--button-transparency));
+            background: rgba(28, 28, 30, 0.5);
             backdrop-filter: blur(30px);
             border-radius: min(4vw, 20px);
             padding: min(3vw, 15px);
@@ -371,9 +366,9 @@
         }
 
         .frame-control-btn {
-            background: rgba(255, 55, 95, var(--button-transparency));
-            border: none;
-            color: white;
+            background: transparent; /* 按钮背景全透明 */
+            border: 1px solid rgba(255, 255, 255, 0.2); /* 轻微边框 */
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 文字半透明 */
             padding: min(3vw, 15px) min(4vw, 20px);
             border-radius: min(2vw, 12px);
             font-size: var(--font-size-normal);
@@ -381,16 +376,15 @@
             touch-action: manipulation;
             flex: 1;
             min-width: min(25vw, 120px);
-            backdrop-filter: blur(10px);
         }
 
         .frame-control-btn:active {
-            background: rgba(229, 50, 86, var(--button-transparency));
+            background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
             transform: scale(0.95);
         }
 
         .auto-frame-btn.active {
-            background: rgba(76, 175, 80, var(--button-transparency));
+            background: rgba(76, 175, 80, 0.2); /* 激活时轻微背景 */
         }
 
         /* 長按控制 */
@@ -399,7 +393,7 @@
             bottom: min(40vw, 320px);
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(28, 28, 30, var(--button-transparency));
+            background: rgba(28, 28, 30, 0.5);
             backdrop-filter: blur(30px);
             border-radius: min(4vw, 20px);
             padding: min(3vw, 15px);
@@ -413,19 +407,18 @@
         }
 
         .long-press-btn {
-            background: rgba(255, 55, 95, var(--button-transparency));
-            border: none;
-            color: white;
+            background: transparent; /* 按钮背景全透明 */
+            border: 1px solid rgba(255, 255, 255, 0.2); /* 轻微边框 */
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 文字半透明 */
             padding: min(3vw, 15px) min(4vw, 25px);
             border-radius: min(2vw, 12px);
             font-size: var(--font-size-normal);
             font-weight: 600;
             touch-action: manipulation;
-            backdrop-filter: blur(10px);
         }
 
         .long-press-btn:active {
-            background: rgba(229, 50, 86, var(--button-transparency));
+            background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
             transform: scale(0.95);
         }
 
@@ -518,39 +511,6 @@
                 border: 1px solid rgba(255, 255, 255, 0.1);
             }
         }
-
-        /* 音量控制 */
-        .volume-control {
-            position: absolute;
-            bottom: min(25vw, 200px);
-            left: min(4vw, 25px);
-            background: rgba(28, 28, 30, var(--button-transparency));
-            backdrop-filter: blur(30px);
-            border-radius: min(4vw, 20px);
-            padding: min(3vw, 15px);
-            display: flex;
-            align-items: center;
-            gap: min(2vw, 12px);
-            z-index: 50;
-        }
-
-        .volume-slider {
-            width: min(20vw, 120px);
-            height: min(1vw, 6px);
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: min(1vw, 4px);
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        .volume-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: min(3vw, 20px);
-            height: min(3vw, 20px);
-            background: #fff;
-            border-radius: 50%;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
@@ -599,7 +559,7 @@
                     <i class="fas fa-running"></i>
                 </button>
 
-                <!-- 新增音量控制按钮 -->
+                <!-- 音量控制按钮 -->
                 <button class="control-btn" id="volumeBtn">
                     <i class="fas fa-volume-up"></i>
                 </button>
@@ -630,12 +590,6 @@
             <button class="speed-option" data-speed="0.5">0.5x Speed</button>
             <button class="speed-option" data-speed="0.1">0.1x Speed</button>
             <button class="speed-option" data-speed="frame" id="frameByFrameBtn">Frame by Frame</button>
-        </div>
-
-        <!-- 音量控制面板 -->
-        <div class="volume-control" id="volumeControl">
-            <i class="fas fa-volume-up"></i>
-            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.1" value="1">
         </div>
 
         <!-- 逐幀控制按鈕 -->
@@ -732,10 +686,8 @@
         const longPressIndicator = document.getElementById('longPressIndicator');
         const playHint = document.getElementById('playHint');
         
-        // 新增音量控制元素
+        // 音量控制按钮
         const volumeBtn = document.getElementById('volumeBtn');
-        const volumeControl = document.getElementById('volumeControl');
-        const volumeSlider = document.getElementById('volumeSlider');
 
         // 變數
         let currentSpeed = 1;
@@ -751,6 +703,7 @@
         let currentFile = null;
         let lastPlayPosition = 0;
         const FRAME_DELAY = 1000; // 1秒1幀
+        let isMuted = false; // 静音状态
 
         // 檢測設備類型
         function isiPhone() {
@@ -845,9 +798,8 @@
                 }
             });
             
-            // 新增音量控制事件
-            volumeBtn.addEventListener('click', toggleVolumeControl);
-            volumeSlider.addEventListener('input', updateVolume);
+            // 音量控制事件
+            volumeBtn.addEventListener('click', toggleMute);
         }
 
         // 影片可以播放時
@@ -1266,19 +1218,15 @@
             alert('影片載入失敗，請檢查檔案格式或選擇其他檔案。');
         }
 
-        // 新增音量控制功能
-        function toggleVolumeControl() {
-            volumeControl.style.display = volumeControl.style.display === 'flex' ? 'none' : 'flex';
-        }
-
-        function updateVolume() {
-            videoPlayer.volume = volumeSlider.value;
+        // 静音/取消静音功能
+        function toggleMute() {
+            isMuted = !isMuted;
+            videoPlayer.muted = isMuted;
+            
             // 更新音量图标
             const volumeIcon = volumeBtn.querySelector('i');
-            if (videoPlayer.volume === 0) {
+            if (isMuted) {
                 volumeIcon.className = 'fas fa-volume-mute';
-            } else if (videoPlayer.volume < 0.5) {
-                volumeIcon.className = 'fas fa-volume-down';
             } else {
                 volumeIcon.className = 'fas fa-volume-up';
             }
