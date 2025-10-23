@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>全螢幕影片播放器</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -30,6 +33,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
+            position: fixed; /* 防止滾動 */
         }
         
         body {
@@ -43,6 +47,11 @@
             flex-direction: column;
             touch-action: manipulation;
             font-size: var(--font-size-normal);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
         
         /* 影片容器 - 全螢幕滿版 */
@@ -302,6 +311,28 @@
             background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
         }
         
+        /* 全螢幕按鈕 */
+        .fullscreen-btn {
+            position: absolute;
+            top: min(4vw, 25px);
+            right: min(12vw, 80px);
+            background: transparent; /* 按钮背景全透明 */
+            border: none;
+            color: rgba(255, 255, 255, var(--icon-transparency)); /* 图标和文字半透明 */
+            padding: min(3vw, 18px) min(4vw, 25px);
+            border-radius: min(3vw, 14px);
+            font-size: var(--font-size-normal);
+            display: flex;
+            align-items: center;
+            gap: min(2vw, 12px);
+            z-index: 50;
+            touch-action: manipulation;
+        }
+        
+        .fullscreen-btn:active {
+            background: rgba(255, 255, 255, 0.1); /* 激活时轻微背景 */
+        }
+        
         /* 幀號顯示 - 完全透明，没有背景色 */
         .frame-info {
             position: absolute;
@@ -466,6 +497,16 @@
             align-items: center;
         }
 
+        /* 全螢幕模式下的特殊樣式 */
+        body.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
         @media (min-width: 768px) {
             .button-container {
                 flex-direction: row;
@@ -510,7 +551,7 @@
                 opacity: 1 !important;
             }
             
-            .back-btn, .screenshot-btn {
+            .back-btn, .screenshot-btn, .fullscreen-btn {
                 opacity: 1 !important;
             }
             
@@ -593,6 +634,12 @@
         <button class="screenshot-btn" id="screenshotBtn">
             <i class="fas fa-camera"></i>
             Screenshot
+        </button>
+        
+        <!-- 全螢幕按鈕 -->
+        <button class="fullscreen-btn" id="fullscreenBtn">
+            <i class="fas fa-expand"></i>
+            Fullscreen
         </button>
         
         <!-- 幀號顯示 - 完全透明 -->
@@ -705,6 +752,9 @@
         
         // 音量控制按钮
         const volumeBtn = document.getElementById('volumeBtn');
+        
+        // 全螢幕按鈕
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
 
         // 變數
         let currentSpeed = 1;
@@ -721,6 +771,7 @@
         let lastPlayPosition = 0;
         const FRAME_DELAY = 1000; // 1秒1幀
         let isMuted = false; // 静音状态
+        let isFullscreen = false;
 
         // 檢測設備類型
         function isiPhone() {
@@ -747,6 +798,9 @@
             } else {
                 initForDesktop();
             }
+            
+            // 嘗試自動進入全螢幕
+            setTimeout(enterFullscreen, 500);
         }
 
         // 行動設備初始化
@@ -817,6 +871,75 @@
             
             // 音量控制事件
             volumeBtn.addEventListener('click', toggleMute);
+            
+            // 全螢幕控制
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            
+            // 監聽全螢幕變化
+            document.addEventListener('fullscreenchange', handleFullscreenChange);
+            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+        }
+
+        // 全螢幕相關功能
+        function toggleFullscreen() {
+            if (!isFullscreen) {
+                enterFullscreen();
+            } else {
+                exitFullscreen();
+            }
+        }
+
+        function enterFullscreen() {
+            const element = document.documentElement;
+            
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.webkitRequestFullscreen) {
+                element.webkitRequestFullscreen();
+            } else if (element.mozRequestFullScreen) {
+                element.mozRequestFullScreen();
+            } else if (element.msRequestFullscreen) {
+                element.msRequestFullscreen();
+            }
+            
+            isFullscreen = true;
+            updateFullscreenButton();
+        }
+
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+            
+            isFullscreen = false;
+            updateFullscreenButton();
+        }
+
+        function handleFullscreenChange() {
+            isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                             document.mozFullScreenElement || document.msFullscreenElement);
+            updateFullscreenButton();
+        }
+
+        function updateFullscreenButton() {
+            const icon = fullscreenBtn.querySelector('i');
+            const text = fullscreenBtn.querySelector('span');
+            
+            if (isFullscreen) {
+                icon.className = 'fas fa-compress';
+                if (text) text.textContent = 'Exit Fullscreen';
+            } else {
+                icon.className = 'fas fa-expand';
+                if (text) text.textContent = 'Fullscreen';
+            }
         }
 
         // 影片可以播放時
