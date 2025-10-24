@@ -1249,44 +1249,47 @@
             }
         }
 
-        // 初始化應用
-        init();
+// 初始化應用
+init();
 
-// ✅ [新增] iPhone Safari 真正全螢幕 + 一開始播放即全螢幕
-function enterIOSFullscreen() {
-    const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isiOS && videoPlayer.webkitEnterFullscreen) {
-        videoPlayer.webkitEnterFullscreen(); // iPhone Safari 專用全螢幕
-    } else if (videoPlayer.requestFullscreen) {
-        // 其他平台用標準 API
-        videoPlayer.requestFullscreen().catch(() => {});
-    }
+/* ✅【新增】iPhone Safari 假全螢幕模式
+   - 不跳出原生播放器
+   - 自動隱藏網址列與工具列
+   - 保留所有自訂控制介面
+*/
+function isIPhoneSafari() {
+    return /iPhone|iPad|iPod/i.test(navigator.userAgent) && /Safari/i.test(navigator.userAgent);
 }
 
-// ✅ 使用者第一次互動後 → 自動播放並全螢幕
-document.addEventListener('click', async function autoFullscreen() {
-    try {
-        await videoPlayer.play();
-        enterIOSFullscreen();
-    } catch (e) {
-        console.log('自動全螢幕啟動失敗:', e);
-    }
-    document.removeEventListener('click', autoFullscreen);
-}, { once: true });
+// 嘗試捲動讓 Safari 工具列隱藏
+function hideSafariUI() {
+    if (!isIPhoneSafari()) return;
+    window.scrollTo(0, 1); // 強制觸發 Safari UI 收起
+}
 
-// ✅ 若影片載入後使用者已互動，仍確保自動進入全螢幕
-videoPlayer.addEventListener('loadeddata', () => {
-    const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isiOS && document.visibilityState === 'visible') {
-        setTimeout(() => {
-            try {
-                if (videoPlayer.paused === false) {
-                    videoPlayer.webkitEnterFullscreen();
-                }
-            } catch (e) {}
-        }, 800);
-    }
+// 當影片開始播放時自動嘗試隱藏 UI
+videoPlayer.addEventListener('play', () => {
+    setTimeout(hideSafariUI, 300);
+    // 若使用者旋轉或返回畫面，再次隱藏
+    window.addEventListener('orientationchange', hideSafariUI);
+    window.addEventListener('resize', hideSafariUI);
 });
+
+// 若載入影片後未播放，也嘗試一次視覺全螢幕
+videoPlayer.addEventListener('loadeddata', () => {
+    setTimeout(hideSafariUI, 500);
+});
+
+// 使用者第一次互動時確保啟動播放 + 隱藏 UI
+document.addEventListener('click', async function autoPlayAndHide() {
+    try {
+        if (videoPlayer.paused) await videoPlayer.play();
+        hideSafariUI();
+    } catch(e) {
+        console.log('假全螢幕啟動失敗:', e);
+    }
+    document.removeEventListener('click', autoPlayAndHide);
+}, { once: true });
 
 // 離開頁面前保存位置
 window.addEventListener('beforeunload', saveLastPosition);
