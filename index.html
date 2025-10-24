@@ -963,36 +963,7 @@
 
         // 播放/暫停切換
         function togglePlayPause() {
-// 🧩 修正：若影片未準備好則略過
-  if (!videoPlayer.src || videoPlayer.readyState < 2) {
-    console.log('影片尚未可播放');
-    return;
-  }
 
-  // 🧩 修正：確保使用者點擊事件有效
-  try {
-    if (videoPlayer.paused) {
-      if (!videoPlayer.muted && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        // iPhone Safari 要求靜音才能自動播放
-        videoPlayer.muted = true;
-        await videoPlayer.play();
-        videoPlayer.muted = false;
-      } else {
-        await videoPlayer.play();
-      }
-      isPlaying = true;
-      updatePlayPauseButton();
-      playHint.classList.remove('active');
-    } else {
-      videoPlayer.pause();
-      isPlaying = false;
-      updatePlayPauseButton();
-    }
-  } catch (err) {
-    console.warn('播放被阻止:', err);
-    playHint.classList.add('active');
-  }
-}                        
             if (isFrameByFrameMode) {
                 disableFrameByFrame();
                 return;
