@@ -963,29 +963,6 @@
 
         // 播放/暫停切換
         function togglePlayPause() {
-            if (isFrameByFrameMode) {
-                disableFrameByFrame();
-                return;
-            }
-
-            if (videoPlayer.paused) {
-                videoPlayer.play().then(() => {
-                    isPlaying = true;
-                    updatePlayPauseButton();
-                    playHint.classList.remove('active');
-                }).catch(error => {
-                    console.log('播放失敗:', error);
-                    playHint.classList.add('active');
-                });
-            } else {
-                videoPlayer.pause();
-                isPlaying = false;
-                updatePlayPauseButton();
-            }
-        }
-
-        // 更新播放/暫停按鈕
-        function updatePlayPauseButton() {
 // 🧩 修正：若影片未準備好則略過
   if (!videoPlayer.src || videoPlayer.readyState < 2) {
     console.log('影片尚未可播放');
@@ -1015,7 +992,31 @@
     console.warn('播放被阻止:', err);
     playHint.classList.add('active');
   }
-}            
+}                        
+            if (isFrameByFrameMode) {
+                disableFrameByFrame();
+                return;
+            }
+
+            if (videoPlayer.paused) {
+                videoPlayer.play().then(() => {
+                    isPlaying = true;
+                    updatePlayPauseButton();
+                    playHint.classList.remove('active');
+                }).catch(error => {
+                    console.log('播放失敗:', error);
+                    playHint.classList.add('active');
+                });
+            } else {
+                videoPlayer.pause();
+                isPlaying = false;
+                updatePlayPauseButton();
+            }
+        }
+
+        // 更新播放/暫停按鈕
+        function updatePlayPauseButton() {
+
             playPauseBtn.innerHTML = isPlaying ? 
                 '<i class="fas fa-pause"></i>' : 
                 '<i class="fas fa-play"></i>';
