@@ -259,7 +259,7 @@
     let frameDuration = 1 / assumedFPS;
     let currentRate = '1.0'; 
     let isDragging = false; 
-    let lastObjectURL = null; // 用於 Blob URL 管理
+    let lastObjectURL = null; 
 
     // --- FPS 處理邏輯 (保持不變) ---
     function updateFps(fpsValue) {
@@ -277,13 +277,10 @@
             frameDuration = 1 / assumedFPS;
             fpsDisplay.textContent = `目前 FPS: ${assumedFPS}`;
             
-            if (currentRate === '1fps' && !video.paused) {
-                video.playbackRate = frameDuration;
-            }
+            // 這裡不再設定 video.playbackRate，交給 togglePlayBtn 處理
         } else if (fpsValue !== 'custom') {
             fpsSelect.value = assumedFPS.toString();
         }
-
         updateTimeInfo();
     }
     fpsSelect.addEventListener('change', (e) => updateFps(e.target.value));
@@ -292,7 +289,7 @@
     });
     updateFps(fpsSelect.value); 
 
-    // --- 速度選單邏輯 (保持不變) ---
+    // --- 速度選單邏輯 ---
     speedBtn.addEventListener('click', (e) => {
         const rect = speedBtn.getBoundingClientRect();
         const videoWrapperRect = videoWrapper.getBoundingClientRect();
@@ -309,6 +306,8 @@
             currentRate = rate;
             
             if (!video.src) return;
+            
+            // 如果影片正在播放，立即更新速率
             if (!video.paused) {
                 if (rate === '1fps') {
                     video.playbackRate = frameDuration;
@@ -316,6 +315,7 @@
                     video.playbackRate = parseFloat(rate);
                 }
             }
+            // 如果暫停，下次播放時才會生效
 
             speedOptions.forEach(b => b.classList.remove('active'));
             button.classList.add('active');
@@ -332,11 +332,10 @@
 
     // --- 影片控制邏輯 ---
     
-    // 1. 載入影片檔案 (關鍵修正：確保 load() 與用戶點擊同時發生)
+    // 1. 載入影片檔案 
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
-            // 撤銷前一個 Blob URL
             if (lastObjectURL) {
                 URL.revokeObjectURL(lastObjectURL);
             }
@@ -345,27 +344,21 @@
             lastObjectURL = fileURL; 
 
             video.src = fileURL;
-            video.load(); // 必須呼叫 load() 讓影片元素讀取新的 URL
+            video.load(); 
             
             video.removeAttribute('controls');
             togglePlayBtn.textContent = '▶';
             
-            // 重設速度選項
             currentRate = '1.0'; 
             speedOptions.forEach(b => b.classList.remove('active'));
             const defaultSpeedBtn = speedMenu.querySelector('[data-rate="1.0"]');
             if (defaultSpeedBtn) defaultSpeedBtn.classList.add('active');
 
+            // 確保影片載入元數據後停在 0s
             video.currentTime = 0; 
             updateTimeInfo(0, video.duration || 0);
 
-            // 輔助性動作：嘗試讓影片在載入元數據後立即暫停到第一幀，確保 UI 正確
-            video.addEventListener('loadedmetadata', function listener() {
-                video.pause();
-                video.currentTime = 0;
-                // 移除監聽器，避免重複執行
-                video.removeEventListener('loadedmetadata', listener);
-            });
+            // 移除不必要的 loadedmetadata 處理，依賴原生行為
         }
     });
 
@@ -374,9 +367,12 @@
         progressBar.max = Math.floor(video.duration * 1000);
         progressBar.value = 0;
         updateTimeInfo();
+        // 確保影片停在第一幀
+        video.pause();
+        video.currentTime = 0;
     });
 
-    // 3. 播放/暫停按鈕 (關鍵修正：簡化 Promise 處理，只處理錯誤)
+    // 3. 播放/暫停按鈕 (關鍵修正：立即設定 Rate，並簡化 Promise 錯誤處理)
     togglePlayBtn.addEventListener('click', () => {
         if (!video.src) {
             alert("請先點擊「選擇影片」載入檔案。");
@@ -384,29 +380,26 @@
         }
 
         if (video.paused || video.ended) {
+            
+            // *** 修正重點：在呼叫 play() 之前先設定播放速率 ***
+            if (currentRate === '1fps') {
+                video.playbackRate = frameDuration;
+            } else {
+                video.playbackRate = parseFloat(currentRate);
+            }
+            
             const playPromise = video.play();
             
-            // 處理 iOS 必須處理的 Promise
             if (playPromise !== undefined) {
-                playPromise.then(_ => {
-                    // 播放成功
-                    if (currentRate === '1fps') {
-                        video.playbackRate = frameDuration;
-                    } else {
-                        video.playbackRate = parseFloat(currentRate);
-                    }
-                    // togglePlayBtn.textContent = '⏸'; // 交給 'play' 事件處理
-                }).catch(error => {
-                    // 播放失敗 (最常見的原因是沒有充分的用戶互動)
+                playPromise.catch(error => {
+                    // 播放失敗 (被瀏覽器阻止)
                     console.error("Video Playback blocked/failed:", error);
-                    alert("影片播放被限制。請確保影片已完整載入，並再次點擊播放按鈕。");
-                    video.pause();
-                    togglePlayBtn.textContent = '▶';
+                    alert("影片無法自動播放，請手動拖曳進度條或使用逐幀按鈕後，再次點擊播放。");
+                    video.pause(); // 確保 UI 顯示為暫停
                 });
             }
         } else {
             video.pause();
-            // togglePlayBtn.textContent = '▶'; // 交給 'pause' 事件處理
         }
     });
     
@@ -467,6 +460,7 @@
         const seekTime = progressBar.value / 1000;
         video.currentTime = seekTime;
         isDragging = false;
+        // 如果影片載入後，用戶拖動了進度條，視為一次有效的互動，並暫停
         if (!video.paused) video.pause();
     });
 
@@ -497,18 +491,8 @@
         }
     });
 
-    // 9. 處理應用程式恢復/聚焦事件 (PWA 專用 - 保持不變)
-    window.addEventListener('focus', () => {
-        if (video.src && lastObjectURL) {
-             // 只有在當前是暫停狀態時，嘗試重新載入影片
-             if (video.paused) {
-                 video.load(); 
-                 video.currentTime = 0; 
-                 updateTimeInfo(0, video.duration || 0);
-                 console.log("App restored: Video reloaded.");
-             }
-        }
-    });
+    // 9. 移除 window.addEventListener('focus', ...)
+    // 避免在 PWA 恢復時，自動的 video.load() 造成狀態不穩定。
 </script>
 
 </body>
