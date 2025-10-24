@@ -19,13 +19,11 @@
             width: 100%;
             max-width: 900px;
             background-color: #333;
-            /* 移除 position: relative，因為現在由 video-wrapper 負責定位浮水印 */
         }
         
-        /* 新增的定位容器 */
         .video-wrapper {
-            position: relative; /* 關鍵：讓浮水印按鈕相對於此容器定位 */
-            line-height: 0; /* 確保 videoPlayer 下方沒有多餘空白 */
+            position: relative; 
+            line-height: 0;
         }
 
         #videoPlayer {
@@ -37,21 +35,28 @@
         /* --- 浮水印播放控制區域 (第一排按鈕) --- */
         .controls-overlay {
             position: absolute;
-            bottom: 10px; /* 距離 videoPlayer 底部 10px */
+            bottom: 10px; 
             left: 50%;
-            transform: translateX(-50%); /* 水平居中 */
+            transform: translateX(-50%); 
             display: flex;
             align-items: center;
             gap: 10px;
             padding: 5px 15px;
-            background-color: rgba(0, 0, 0, 0.5); /* 半透明背景 */
+            /* 調整為接近透明的黑色背景 (0.2 透明度) */
+            background-color: rgba(0, 0, 0, 0.2); 
             border-radius: 8px;
             z-index: 500; 
             max-width: 90%; 
+            transition: background-color 0.3s; /* 增加過渡效果 */
+        }
+        /* 鼠標懸停時稍微亮一點 */
+        .controls-overlay:hover {
+            background-color: rgba(0, 0, 0, 0.4);
         }
         
         .controls-overlay button {
-            background-color: rgba(68, 68, 68, 0.8);
+            /* 調整為接近透明的灰色按鈕背景 (0.3 透明度) */
+            background-color: rgba(68, 68, 68, 0.3); 
             border: none;
             color: #fff;
             padding: 8px 10px;
@@ -63,10 +68,12 @@
             transition: background-color 0.2s;
         }
         .controls-overlay button:hover {
+            /* 懸停時按鈕變為不透明的藍色 */
             background-color: #007aff; 
         }
         #togglePlay {
-            background-color: #007aff;
+            /* 播放鍵保持較高的辨識度 */
+            background-color: #007aff; 
             font-size: 18px;
             padding: 8px 15px;
         }
@@ -77,7 +84,7 @@
         /* --- 速度選單 (浮動) --- */
         .speed-menu {
             position: absolute;
-            background-color: #333;
+            background-color: rgba(51, 51, 51, 0.9); /* 選單本身稍微不那麼透明，以利閱讀 */
             border-radius: 4px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
             padding: 5px;
@@ -87,7 +94,7 @@
             gap: 4px;
         }
         .speed-menu button {
-            background-color: #444; 
+            background-color: rgba(68, 68, 68, 0.6); /* 選單按鈕 */
             color: #fff;
             padding: 6px 12px;
             font-size: 14px;
@@ -103,7 +110,8 @@
         /* --- 下方控制面板 (進度條/設定) --- */
         .controls-panel {
             padding: 10px;
-            background-color: #222;
+            /* 關鍵：主控制面板背景完全透明 */
+            background-color: transparent; 
             color: #fff;
             display: flex;
             flex-direction: column;
@@ -115,8 +123,23 @@
             gap: 8px;
             flex-wrap: wrap; 
         }
+        /* 所有控制項的基礎樣式 */
+        button, select, input[type="number"], #fileInputLabel {
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            /* 保持實色按鈕，以利操作 */
+            background-color: #444; 
+            color: #fff;
+            box-sizing: border-box;
+            height: 40px; 
+            line-height: 20px;
+            white-space: nowrap;
+        }
         
-        /* 第二排：進度條與時間資訊 */
+        /* 其他樣式保持不變 */
         #timeInfo { min-width: 120px; text-align: right; }
         #frameInfo { min-width: 60px; }
         input[type="range"] {
@@ -129,29 +152,21 @@
             height: 15px; border-radius: 50%; background: #fff;
         }
         
-        /* 第三排：檔案與 FPS 設定 */
         #fileInputLabel { background-color: #007aff; flex-grow: 0; }
         #fullscreenBtn { background-color: #444; flex-grow: 0; min-width: 40px; }
         #fpsSelect { flex-grow: 0; min-width: 70px; }
         #customFpsInput { flex-grow: 0; width: 60px; text-align: center; background-color: #333; }
         #fpsDisplay { flex-grow: 1; text-align: left; }
         
-        /* 全螢幕模式 */
         .player-container:-webkit-full-screen, .player-container:fullscreen { 
-            width: 100%;
-            height: 100%;
-            max-width: none;
-            display: flex; /* 確保子元素能正確佈局 */
-            flex-direction: column;
+            width: 100%; height: 100%; max-width: none; display: flex; flex-direction: column;
         }
         
-        /* 全螢幕時 video-wrapper 佔滿空間 */
         .player-container:-webkit-full-screen .video-wrapper, 
         .player-container:fullscreen .video-wrapper {
             flex-grow: 1;
         }
         
-        /* 全螢幕時 controls-panel 保持底部 */
         .player-container:-webkit-full-screen .controls-panel,
         .player-container:fullscreen .controls-panel {
             flex-grow: 0;
@@ -185,6 +200,8 @@
             <button data-rate="1fps">逐幀 (Frame)</button>
         </div>
     </div>
+
+
     <div class="controls-panel">
         
         <div class="controls-group controls-progress">
@@ -237,14 +254,15 @@
     const speedBtn = document.getElementById('speedBtn');
     const speedMenu = document.getElementById('speedMenu');
     const speedOptions = speedMenu.querySelectorAll('button');
-    const videoWrapper = document.querySelector('.video-wrapper'); // 新增
+    const videoWrapper = document.querySelector('.video-wrapper');
 
     let assumedFPS = 30; 
     let frameDuration = 1 / assumedFPS;
     let currentRate = '1.0'; 
     let isDragging = false; 
 
-    // --- FPS 處理邏輯 (不變) ---
+    // --- FPS 處理邏輯 ---
+
     function updateFps(fpsValue) {
         let newFps;
         if (fpsValue === 'custom') {
@@ -275,28 +293,21 @@
     });
     updateFps(fpsSelect.value); 
 
-    // --- 速度選單邏輯 (修正定位計算) ---
+    // --- 速度選單邏輯 ---
 
-    // 顯示/隱藏速度選單
     speedBtn.addEventListener('click', (e) => {
         const rect = speedBtn.getBoundingClientRect();
         const videoWrapperRect = videoWrapper.getBoundingClientRect();
         
-        // 計算 speedBtn 相對於 videoWrapper 右邊緣的距離
         const absoluteRight = videoWrapperRect.right - rect.right;
         
-        // 確保 speedMenu 浮動在 controlsOverlay 上方
         speedMenu.style.bottom = `${controlsOverlay.offsetHeight + 10}px`; 
-        
-        // 定位 speedMenu 的右側
-        // (absoluteRight - rect.width / 2) 讓選單大約對齊按鈕中心
         speedMenu.style.right = `${absoluteRight - (rect.width / 2) + 20}px`; 
 
         speedMenu.style.display = speedMenu.style.display === 'flex' ? 'none' : 'flex';
         e.stopPropagation(); 
     });
 
-    // 處理速度選項點擊
     speedOptions.forEach(button => {
         button.addEventListener('click', () => {
             const rate = button.getAttribute('data-rate');
@@ -318,16 +329,14 @@
         });
     });
 
-    // 點擊其他地方隱藏選單
     document.addEventListener('click', (e) => {
         if (!speedMenu.contains(e.target) && e.target !== speedBtn) {
             speedMenu.style.display = 'none';
         }
     });
 
-    // --- 影片控制邏輯 (保持不變) ---
+    // --- 影片控制邏輯 ---
     
-    // 1. 載入影片檔案
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -342,17 +351,14 @@
         }
     });
 
-    // 2. 元數據載入完成後
     video.addEventListener('loadedmetadata', () => {
         progressBar.max = Math.floor(video.duration * 1000);
         progressBar.value = 0;
         updateTimeInfo();
     });
 
-    // 3. 播放/暫停按鈕
     togglePlayBtn.addEventListener('click', () => {
         if (!video.src) return;
-
         if (video.paused || video.ended) {
             if (currentRate === '1fps') {
                 video.playbackRate = frameDuration;
@@ -370,7 +376,6 @@
     video.addEventListener('play', () => { togglePlayBtn.textContent = '⏸'; });
     video.addEventListener('pause', () => { togglePlayBtn.textContent = '▶'; });
     
-    // 4. 時間/幀數資訊更新
     video.addEventListener('timeupdate', () => {
         if (!video.duration) return;
         if (!isDragging) {
@@ -392,7 +397,6 @@
         frameInfo.textContent = `F: ${currentFrame}`;
     }
 
-    // 5. 前進/後退（秒數）和 逐幀
     document.getElementById('stepBackward').addEventListener('click', () => {
         if (!video.src) return; video.currentTime = Math.max(0, video.currentTime - 0.1); video.pause();
     });
@@ -412,7 +416,6 @@
         video.currentTime = Math.min(video.duration, targetFrame * frameDuration);
     });
 
-    // 6. 進度條拖曳控制
     progressBar.addEventListener('mousedown', () => isDragging = true);
     progressBar.addEventListener('mouseup', () => isDragging = false);
     progressBar.addEventListener('input', () => {
@@ -426,7 +429,6 @@
         if (!video.paused) video.pause();
     });
 
-    // 7. 儲存畫面（透過 Canvas）
     saveFrameBtn.addEventListener('click', () => {
         if (!video.src) return;
         videoCanvas.width = video.videoWidth;
@@ -441,7 +443,6 @@
         document.body.removeChild(link);
     });
 
-    // 8. 全螢幕
     fullscreenBtn.addEventListener('click', () => {
         if (!video.src) return;
         if (playerContainer.requestFullscreen) {
