@@ -1,422 +1,395 @@
-<!doctype html>
-<html lang="zh-Hant">
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
-<title>手機影片播放器（含縮圖、逐格、儲存畫面）</title>
-<style>
-  :root{
-    --bg:#f7f6fa;
-    --panel:#ffffff;
-    --accent:#6c43ff;
-    --muted:#999;
-    --thumb-h:64px;
-  }
-  html,body{height:100%;margin:0;font-family: -apple-system, "Segoe UI", Roboto, "Noto Sans TC", Arial;}
-  body{background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:10px 8px;box-sizing:border-box}
-  .topbar{width:100%;max-width:900px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-  .topbar h1{font-size:18px;margin:0}
-  .container{width:100%;max-width:900px;background:var(--panel);border-radius:12px;padding:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
-  .video-wrap{background:#000;display:flex;justify-content:center;align-items:center;height:360px;border-radius:8px;overflow:hidden;position:relative}
-  video{max-width:100%;max-height:100%;width:100%;height:100%;background:#000;object-fit:contain}
-  .controls{display:flex;gap:8px;align-items:center;justify-content:center;padding:10px 4px;flex-wrap:wrap}
-  button{background:#fff;border:1px solid #eee;padding:8px 12px;border-radius:10px;font-size:15px}
-  .accent{background:var(--accent);color:#fff;border:0}
-  .small{padding:6px 8px;font-size:13px}
-  .status{display:flex;align-items:center;gap:12px;margin:8px 6px;color:var(--muted);font-size:14px;justify-content:space-between}
-  .progress-row{display:flex;flex-direction:column;gap:8px;margin-top:8px}
-  .thumbs{height:var(--thumb-h);overflow-x:auto;white-space:nowrap;border-radius:10px;background:linear-gradient(180deg,#faf8ff,#fff);padding:6px;display:flex;gap:6px;align-items:center}
-  .thumb{display:inline-block;width:auto;height:var(--thumb-h);border-radius:6px;overflow:hidden;flex:0 0 auto;position:relative}
-  .thumb canvas{height:100%;display:block}
-  .thumb.active::after{content:"";position:absolute;inset:3px;border-radius:5px;border:3px solid var(--accent);pointer-events:none}
-  .time-display{text-align:center;font-weight:600}
-  input[type=file]{display:none}
-  .file-label{display:inline-block;padding:8px 12px;border-radius:10px;background:#fff;border:1px solid #eee}
-  .range{width:100%}
-  .speed-select, .mode-select, .fps-input{margin-left:6px}
-  @media (max-width:420px){
-    .video-wrap{height:320px}
-    .thumbs{height:54px; --thumb-h:54px}
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iPhone 影片分析播放器</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            user-select: none; /* 防止誤觸選取 */
+        }
+        .player-container {
+            width: 100%;
+            max-width: 900px; /* 限制電腦螢幕寬度 */
+            background-color: #333;
+            position: relative;
+        }
+        #videoPlayer {
+            width: 100%;
+            display: block;
+            background-color: #000;
+        }
+        .controls-panel {
+            padding: 10px;
+            background-color: #222;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+        .controls-top, .controls-middle, .controls-bottom {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap; /* 手機上按鈕多時換行 */
+        }
+        button, select {
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background-color: #444;
+            color: #fff;
+            flex-grow: 1;
+            min-width: 50px;
+        }
+        button:hover, select:hover {
+            background-color: #555;
+        }
+        input[type="range"] {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            height: 8px;
+            background: #555;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #fff;
+        }
+        .status-info {
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        #fileInputLabel {
+            background-color: #007aff; /* iPhone 藍色 */
+            text-align: center;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+        #fileInput {
+            display: none;
+        }
+        
+        /* 全螢幕模式下的樣式 */
+        .player-container:-webkit-full-screen { /* 針對 iOS Safari */
+            width: 100%;
+            height: 100%;
+            max-width: none;
+        }
+        .player-container:fullscreen {
+            width: 100%;
+            height: 100%;
+            max-width: none;
+        }
+
+        /* 隱藏原生控制項，只用自訂控制項 */
+        #videoPlayer::-webkit-media-controls {
+            display: none !important;
+        }
+        #videoPlayer {
+            pointer-events: none; /* 防止點擊影片觸發原生控制項 */
+        }
+    </style>
 </head>
 <body>
 
-<div class="topbar">
-  <h1>Choose Frame（iPhone 用）</h1>
-  <label class="file-label">
-    選影片
-    <input id="fileInput" type="file" accept="video/*">
-  </label>
-</div>
+<div class="player-container" id="playerContainer">
+    <video id="videoPlayer" playsinline webkit-playsinline></video>
+    <canvas id="videoCanvas" style="display:none;"></canvas>
+    
+    <div class="controls-panel">
+        
+        <div class="controls-top">
+            <label for="fileInput" id="fileInputLabel">選擇影片檔</label>
+            <input type="file" id="fileInput" accept="video/*">
+            <button id="togglePlay">▶ 播放</button>
+            <button id="fullscreenBtn">⛶ 全螢幕</button>
+            <button id="saveFrame">🖼 儲存畫面</button>
+        </div>
 
-<div class="container">
-  <div class="video-wrap" id="videoWrap">
-    <video id="video" playsinline webkit-playsinline controlslist="nodownload" crossorigin="anonymous"></video>
-    <!-- 可在這放覆蓋按鈕或 loading -->
-  </div>
+        <div class="controls-middle">
+            <button id="stepBackward">⏪ -0.1s</button>
+            <button id="frameBackward">⏴ 逐幀退</button>
+            <button id="frameForward">⏵ 逐幀進</button>
+            <button id="stepForward">快進 +0.1s ⏩</button>
+        </div>
 
-  <div class="status">
-    <div class="time-display" id="timeDisplay">00:00.00 / 00:00.00 — frame 0</div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <label>FPS<input id="fpsInput" class="fps-input" type="number" min="1" value="30" style="width:70px;padding:6px;border-radius:6px;border:1px solid #ddd"></label>
-      <select id="speedSelect" class="speed-select small">
-        <option value="2">2x</option>
-        <option value="1" selected>1x</option>
-        <option value="0.5">0.5x</option>
-        <option value="0.1">0.1x</option>
-        <option value="frame">每秒1frame</option>
-      </select>
-      <button id="saveFrameBtn" class="small">儲存畫面</button>
+        <div class="controls-bottom">
+            <select id="playbackRate">
+                <option value="2.0">2x 速度</option>
+                <option value="1.0" selected>1x 速度</option>
+                <option value="0.5">0.5x 速度</option>
+                <option value="0.1">0.1x 速度</option>
+                <option value="frame">逐幀播放 (1 FPS)</option>
+            </select>
+            
+            <span class="status-info" id="timeInfo">00:00 / 00:00</span>
+            <span class="status-info" id="frameInfo">F: 0</span>
+            <span class="status-info" id="fpsInfo">FPS: 30 (預估)</span>
+        </div>
+
+        <div class="controls-progress">
+            <input type="range" id="progressBar" value="0" min="0" max="1000" step="1">
+        </div>
+        
     </div>
-  </div>
-
-  <div class="controls">
-    <button id="backBtn" class="small">◀◀</button>
-    <button id="playBtn" class="accent">播放</button>
-    <button id="forwardBtn" class="small">▶▶</button>
-    <button id="prevFrameBtn" class="small">上格</button>
-    <button id="nextFrameBtn" class="small">下格</button>
-    <button id="regenThumbs" class="small">生成縮圖</button>
-    <a id="downloadAnchor" style="display:none"></a>
-  </div>
-
-  <div class="progress-row">
-    <input type="range" id="seekRange" class="range" min="0" max="100" value="0" step="0.01">
-    <div class="thumbs" id="thumbs"></div>
-  </div>
 </div>
-
-<!-- hidden canvas for snapshot / thumbnails -->
-<canvas id="hiddenCanvas" style="display:none"></canvas>
 
 <script>
-(function(){
-  const fileInput = document.getElementById('fileInput');
-  const video = document.getElementById('video');
-  const playBtn = document.getElementById('playBtn');
-  const backBtn = document.getElementById('backBtn');
-  const forwardBtn = document.getElementById('forwardBtn');
-  const saveFrameBtn = document.getElementById('saveFrameBtn');
-  const thumbsEl = document.getElementById('thumbs');
-  const seekRange = document.getElementById('seekRange');
-  const timeDisplay = document.getElementById('timeDisplay');
-  const speedSelect = document.getElementById('speedSelect');
-  const fpsInput = document.getElementById('fpsInput');
-  const prevFrameBtn = document.getElementById('prevFrameBtn');
-  const nextFrameBtn = document.getElementById('nextFrameBtn');
-  const regenThumbsBtn = document.getElementById('regenThumbs');
-  const hiddenCanvas = document.getElementById('hiddenCanvas');
-  const downloadAnchor = document.getElementById('downloadAnchor');
+    const video = document.getElementById('videoPlayer');
+    const fileInput = document.getElementById('fileInput');
+    const togglePlayBtn = document.getElementById('togglePlay');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const stepBackwardBtn = document.getElementById('stepBackward');
+    const stepForwardBtn = document.getElementById('stepForward');
+    const frameBackwardBtn = document.getElementById('frameBackward');
+    const frameForwardBtn = document.getElementById('frameForward');
+    const saveFrameBtn = document.getElementById('saveFrame');
+    const playbackRateSelect = document.getElementById('playbackRate');
+    const progressBar = document.getElementById('progressBar');
+    const timeInfo = document.getElementById('timeInfo');
+    const frameInfo = document.getElementById('frameInfo');
+    const fpsInfo = document.getElementById('fpsInfo');
+    const playerContainer = document.getElementById('playerContainer');
+    const videoCanvas = document.getElementById('videoCanvas');
+    const ctx = videoCanvas.getContext('2d');
 
-  let thumbs = [];
-  let duration = 0;
-  let updatingSeek = false;
-  let thumbCount = 40; // default thumbnails (adjustable)
-  let currentThumbIndex = -1;
-  let frameTimer = null;
-  let isPlayingPerFrameMode = false;
+    // 預設 FPS，用於逐幀計算。實際 FPS 自動偵測較困難，通常會用預設值或伺服器端讀取。
+    let assumedFPS = 30; 
+    let frameDuration; // 1 / assumedFPS
+    let frameMode = false; // 是否處於逐幀播放模式 (frame-by-frame)
+    let lastTimeUpdate = 0; // 用於估算即時 FPS
 
-  // load file
-  fileInput.addEventListener('change', (e)=>{
-    const f = e.target.files && e.target.files[0];
-    if(!f) return;
-    const url = URL.createObjectURL(f);
-    loadVideoURL(url, f.name);
-  });
-
-  function loadVideoURL(url, filename){
-    stopFrameMode();
-    video.src = url;
-    video.load();
-    video.onloadedmetadata = ()=>{
-      duration = video.duration || 0;
-      seekRange.max = duration;
-      updateTimeDisplay();
-      // auto generate thumbnails after metadata loaded
-      generateThumbnails();
-    };
-    video.onplay = ()=>{ updatePlayButton(); }
-    video.onpause = ()=>{ updatePlayButton(); stopFrameModeIfNeeded(); }
-    video.ontimeupdate = ()=>{
-      if(!updatingSeek) updateSeekUI();
-      updateTimeDisplay();
-      highlightCurrentThumb();
-    };
-    video.onended = ()=> updatePlayButton();
-    // mobile-friendly: disable native controls so we use our UI; but keep video element for rendering
-    video.controls = false;
-  }
-
-  // play/pause
-  playBtn.addEventListener('click', ()=>{
-    if(video.paused){
-      if(speedSelect.value === 'frame'){
-        // per-second-one-frame mode
-        startFrameMode();
-      }else{
-        stopFrameMode();
-        video.playbackRate = parseFloat(speedSelect.value);
-        video.play();
-      }
-    }else{
-      video.pause();
-      stopFrameMode();
-    }
-  });
-
-  speedSelect.addEventListener('change', ()=>{
-    const val = speedSelect.value;
-    if(val === 'frame'){
-      // stop normal play and set up per-frame later when Play pressed
-      video.pause();
-      stopFrameMode();
-    } else {
-      stopFrameMode();
-      video.playbackRate = parseFloat(val);
-      // if video was playing, keep playing at new speed
-      if(!video.paused) video.play();
-    }
-    updatePlayButton();
-  });
-
-  function updatePlayButton(){
-    if(!video.src) { playBtn.textContent = '播放'; return; }
-    if(speedSelect.value === 'frame'){
-      playBtn.textContent = (isPlayingPerFrameMode ? '暫停' : '播放');
-    } else {
-      playBtn.textContent = (video.paused ? '播放' : '暫停');
-    }
-  }
-
-  // forward/backward big jumps (5s)
-  backBtn.addEventListener('click', ()=> seekRelative(-5));
-  forwardBtn.addEventListener('click', ()=> seekRelative(5));
-
-  function seekRelative(sec){
-    stopFrameMode();
-    let t = Math.max(0, Math.min(duration, video.currentTime + sec));
-    video.currentTime = t;
-  }
-
-  // prev/next frame (依 fps)
-  prevFrameBtn.addEventListener('click', ()=> stepFrame(-1));
-  nextFrameBtn.addEventListener('click', ()=> stepFrame(1));
-
-  function stepFrame(n){
-    stopFrameMode();
-    const fps = Math.max(1, parseFloat(fpsInput.value) || 30);
-    const delta = n / fps;
-    let t = Math.max(0, Math.min(duration, video.currentTime + delta));
-    video.currentTime = t;
-  }
-
-  // seek range
-  seekRange.addEventListener('input', (e)=>{
-    updatingSeek = true;
-    const t = parseFloat(e.target.value || 0);
-    updateTimeDisplay(t);
-  });
-  seekRange.addEventListener('change', (e)=>{
-    const t = parseFloat(e.target.value || 0);
-    video.currentTime = t;
-    updatingSeek = false;
-  });
-
-  function updateSeekUI(){
-    seekRange.value = video.currentTime;
-  }
-
-  // time & frame display
-  function formatTime(t){
-    if(isNaN(t)) t = 0;
-    const mm = Math.floor(t/60).toString().padStart(2,'0');
-    const ss = Math.floor(t%60).toString().padStart(2,'0');
-    const cs = Math.floor((t - Math.floor(t)) * 100).toString().padStart(2,'0');
-    return `${mm}:${ss}.${cs}`;
-  }
-  function updateTimeDisplay(forceTime){
-    const t = (typeof forceTime === 'number') ? forceTime : video.currentTime || 0;
-    const fps = Math.max(1, parseFloat(fpsInput.value) || 30);
-    const frame = Math.floor(t * fps);
-    timeDisplay.textContent = `${formatTime(t)} / ${formatTime(duration)} — frame ${frame}`;
-  }
-
-  // save current frame -> download PNG
-  saveFrameBtn.addEventListener('click', saveCurrentFrame);
-  async function saveCurrentFrame(){
-    if(!video.src) return alert('請先選影片');
-    // draw to canvas at video's intrinsic resolution (if available)
-    const w = video.videoWidth || 1280;
-    const h = video.videoHeight || 720;
-    hiddenCanvas.width = w;
-    hiddenCanvas.height = h;
-    const ctx = hiddenCanvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, w, h);
-    // create blob and download
-    hiddenCanvas.toBlob((blob)=>{
-      if(!blob) return alert('擷取失敗');
-      const url = URL.createObjectURL(blob);
-      downloadAnchor.href = url;
-      const name = `frame_${Math.floor(video.currentTime*1000)}.png`;
-      downloadAnchor.download = name;
-      downloadAnchor.click();
-      // revoke after short delay
-      setTimeout(()=>URL.revokeObjectURL(url), 2000);
-    }, 'image/png');
-  }
-
-  // --- thumbnails generation ---
-  regenThumbsBtn.addEventListener('click', ()=> generateThumbnails(true));
-
-  async function generateThumbnails(force=false){
-    thumbsEl.innerHTML = '';
-    thumbs = [];
-    currentThumbIndex = -1;
-    if(!video.src) return;
-    // decide sample count based on duration (limit to 60)
-    thumbCount = Math.min(60, Math.max(8, Math.round((duration/Math.max(1,Math.min(5,duration/10))) * 6)));
-    // for long videos sample by uniform intervals
-    const samples = [];
-    for(let i=0;i<thumbCount;i++){
-      samples.push((i/ (thumbCount-1 || 1)) * duration);
-    }
-    // create an offscreen canvas sized to small thumb width
-    const thumbH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--thumb-h')) || 64;
-    // choose width proportional to video aspect ratio
-    const vw = video.videoWidth || 640;
-    const vh = video.videoHeight || 360;
-    const aspect = vw / (vh || 1);
-    const thumbW = Math.round(thumbH * aspect);
-
-    // function to capture a single frame at time t
-    const captureAt = (t) => new Promise((resolve)=>{
-      const onseek = ()=>{
-        // draw
-        const c = document.createElement('canvas');
-        c.width = thumbW;
-        c.height = thumbH;
-        const ctx = c.getContext('2d');
-        try {
-          ctx.drawImage(video, 0, 0, c.width, c.height);
-        } catch(e) {
-          // drawing can fail on some iOS if not ready; fill with blank
-          ctx.fillStyle = '#222'; ctx.fillRect(0,0,c.width,c.height);
+    // 1. 載入影片檔案
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const fileURL = URL.createObjectURL(file);
+            video.src = fileURL;
+            video.load();
+            video.removeAttribute('controls'); // 移除原生控制項
+            togglePlayBtn.textContent = '▶ 播放';
+            frameMode = false;
         }
-        resolve({time:t,canvas:c});
-      };
-      const handler = ()=>{ video.removeEventListener('seeked', handler); onseek(); };
-      video.addEventListener('seeked', handler);
-      // set currentTime (some browsers may not fire seeked if same time)
-      video.currentTime = Math.min(duration, Math.max(0, t));
     });
 
-    // we will capture sequentially to avoid race
-    // backup currentTime to restore later
-    const prevTime = video.currentTime;
-    const prevPaused = video.paused;
-    video.pause();
+    // 2. 元數據載入完成後 (duration, size)
+    video.addEventListener('loadedmetadata', () => {
+        // 嘗試從瀏覽器 API 獲取 FPS。注意：這個 API (getVideoPlaybackQuality) 支援度不高且可能無法提供準確的原始 FPS。
+        // 所以我們先保持一個預設值，並在介面上顯示為「預估」。
+        // 如果影片格式元數據中沒有 FPS 資訊，瀏覽器無法直接提供。
+        
+        // 預設/估算的 FPS
+        assumedFPS = 30; // 普遍影片的預設值
+        frameDuration = 1 / assumedFPS;
+        fpsInfo.textContent = `FPS: ${assumedFPS} (預估)`;
+        
+        progressBar.max = Math.floor(video.duration * 1000); // 進度條以毫秒為單位
+        progressBar.value = 0;
 
-    // show loading placeholders
-    for(let i=0;i<samples.length;i++){
-      const wrap = document.createElement('div');
-      wrap.className='thumb';
-      wrap.style.width = (thumbW)+'px';
-      wrap.innerHTML = `<div style="width:${thumbW}px;height:${thumbH}px;background:#eee"></div>`;
-      thumbsEl.appendChild(wrap);
+        updateTimeInfo();
+        
+        // 嘗試自動全螢幕
+        if (video.duration > 0 && navigator.maxTouchPoints > 0) {
+            // 由於 iOS/Safari 的限制，通常無法在沒有使用者互動的情況下自動全螢幕。
+            // 這裡的 'playsinline webkit-playsinline' 屬性有助於在網頁內播放。
+            // 為了全螢幕，必須由用戶點擊按鈕觸發。
+            // video.play().catch(e => console.log('Video play failed:', e));
+        }
+    });
+
+    // 3. 播放/暫停
+    togglePlayBtn.addEventListener('click', () => {
+        if (!video.src) return;
+
+        if (video.paused || video.ended) {
+            video.playbackRate = parseFloat(playbackRateSelect.value);
+            frameMode = false;
+            video.play();
+            togglePlayBtn.textContent = '⏸ 暫停';
+        } else {
+            video.pause();
+            togglePlayBtn.textContent = '▶ 播放';
+        }
+    });
+    
+    video.addEventListener('play', () => {
+        togglePlayBtn.textContent = '⏸ 暫停';
+    });
+    video.addEventListener('pause', () => {
+        togglePlayBtn.textContent = '▶ 播放';
+    });
+
+    // 4. 進度條和時間更新
+    video.addEventListener('timeupdate', () => {
+        if (!video.duration) return;
+        
+        const currentTime = video.currentTime;
+        const duration = video.duration;
+
+        // 更新進度條
+        if (!progressBar.dragging) {
+            progressBar.value = Math.floor(currentTime * 1000);
+        }
+        
+        updateTimeInfo(currentTime, duration);
+    });
+
+    // 更新時間/幀數/FPS 資訊
+    function updateTimeInfo(currentTime = video.currentTime, duration = video.duration) {
+        const currentSeconds = Math.floor(currentTime);
+        const totalSeconds = Math.floor(duration);
+        const currentFrame = Math.floor(currentTime * assumedFPS);
+
+        const formatTime = (seconds) => {
+            const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            return `${minutes}:${secs}`;
+        };
+        
+        timeInfo.textContent = `${formatTime(currentSeconds)} / ${formatTime(totalSeconds)}`;
+        frameInfo.textContent = `F: ${currentFrame}`;
     }
 
-    for(let i=0;i<samples.length;i++){
-      try{
-        const item = await captureAt(samples[i]);
-        const wrap = thumbsEl.children[i];
-        wrap.innerHTML = '';
-        wrap.appendChild(item.canvas);
-        wrap.dataset.time = item.time;
-        wrap.addEventListener('click', ()=> { video.currentTime = parseFloat(wrap.dataset.time); });
-        wrap.addEventListener('touchstart', ()=> { video.currentTime = parseFloat(wrap.dataset.time); });
-        thumbs.push({time:item.time,el:wrap});
-      }catch(e){
-        console.warn('thumb capture failed', e);
-      }
-    }
 
-    // restore
-    video.currentTime = Math.min(duration, prevTime);
-    if(!prevPaused) video.play();
-    updatePlayButton();
-    updateSeekUI();
-    highlightCurrentThumb();
-  }
+    // 5. 播放速度調整
+    playbackRateSelect.addEventListener('change', (e) => {
+        const rate = e.target.value;
+        if (!video.src) return;
 
-  function highlightCurrentThumb(){
-    if(!thumbs.length) return;
-    // find nearest thumb index
-    const t = video.currentTime || 0;
-    let idx = 0;
-    for(let i=0;i<thumbs.length;i++){
-      if(Math.abs(thumbs[i].time - t) < Math.abs(thumbs[idx].time - t)) idx = i;
-    }
-    if(idx !== currentThumbIndex){
-      if(currentThumbIndex>=0 && thumbs[currentThumbIndex]) thumbs[currentThumbIndex].el.classList.remove('active');
-      currentThumbIndex = idx;
-      if(thumbs[currentThumbIndex]) {
-        thumbs[currentThumbIndex].el.classList.add('active');
-        // auto scroll into view on mobile
-        thumbs[currentThumbIndex].el.scrollIntoView({behavior:'smooth',inline:'center'});
-      }
-    }
-  }
+        if (rate === 'frame') {
+            // 進入逐幀模式 (每秒一個 Frame，即 1 FPS)
+            video.pause();
+            frameMode = true;
+            video.playbackRate = 1; // 設置播放速度為 1x
+            // 模擬 '每秒一個 frame' 效果：
+            // 這裡我們只設置播放速度為 1x，然後在外部控制播放/暫停來實現逐幀，
+            // 'frame' 選項在這裡更多是作為一個獨立的逐幀步進模式的標記。
+            // 如果用戶在 'frame' 模式下按播放，則實際是 1 FPS 播放。
+            video.playbackRate = 1/assumedFPS; // 實際模擬 1FPS (如果影片 FPS 是 30，這裡會是 1/30)
+            
+        } else {
+            frameMode = false;
+            video.playbackRate = parseFloat(rate);
+        }
+    });
 
-  // --- frame-by-frame per-second mode ---
-  function startFrameMode(){
-    // advance video.frame every 1 second (or 1/fps?) user wanted "每秒一個frame播放" — we interpret as advance by one frame per second
-    const fps = Math.max(1, parseFloat(fpsInput.value) || 30);
-    isPlayingPerFrameMode = true;
-    updatePlayButton();
-    video.pause();
-    // set timer to increment by 1 frame each second
-    frameTimer = setInterval(()=>{
-      const next = video.currentTime + (1 / fps);
-      if(next >= duration){
-        // stop at end
-        stopFrameMode();
-        return;
-      }
-      // set time and render
-      video.currentTime = next;
-    }, 1000);
-  }
-  function stopFrameMode(){
-    if(frameTimer) { clearInterval(frameTimer); frameTimer = null; }
-    isPlayingPerFrameMode = false;
-    updatePlayButton();
-  }
-  function stopFrameModeIfNeeded(){
-    if(speedSelect.value === 'frame'){
-      // keep paused status
-      stopFrameMode();
-    }
-  }
+    // 6. 前進/後退（秒數）
+    stepBackwardBtn.addEventListener('click', () => {
+        if (!video.src) return;
+        video.currentTime = Math.max(0, video.currentTime - 0.1); // 後退 0.1 秒
+    });
+    
+    stepForwardBtn.addEventListener('click', () => {
+        if (!video.src) return;
+        video.currentTime = Math.min(video.duration, video.currentTime + 0.1); // 前進 0.1 秒
+    });
 
-  // cleanup
-  window.addEventListener('beforeunload', ()=> {
-    stopFrameMode();
-  });
+    // 7. 逐幀前進/後退
+    // 透過設置 currentTime 來模擬逐幀。
+    frameBackwardBtn.addEventListener('click', () => {
+        if (!video.src || isNaN(frameDuration)) return;
+        video.pause();
+        video.currentTime = Math.max(0, video.currentTime - frameDuration); // 逐幀後退
+    });
 
-  // keyboard support for desktop (optional)
-  window.addEventListener('keydown', (e)=>{
-    if(e.key === ' '){ e.preventDefault(); playBtn.click(); }
-    if(e.key === 'ArrowLeft'){ backBtn.click(); }
-    if(e.key === 'ArrowRight'){ forwardBtn.click(); }
-    if(e.key === ',' ) prevFrameBtn.click();
-    if(e.key === '.' ) nextFrameBtn.click();
-  });
+    frameForwardBtn.addEventListener('click', () => {
+        if (!video.src || isNaN(frameDuration)) return;
+        video.pause();
+        video.currentTime = Math.min(video.duration, video.currentTime + frameDuration); // 逐幀前進
+    });
 
-  // initial UI state
-  updatePlayButton();
-})();
+
+    // 8. 進度條拖曳控制
+    let dragging = false;
+    progressBar.addEventListener('mousedown', () => dragging = true);
+    progressBar.addEventListener('mouseup', () => dragging = false);
+    
+    progressBar.addEventListener('input', () => {
+        // 拖曳時顯示預覽時間，但不立即更新影片
+        const seekTime = progressBar.value / 1000;
+        updateTimeInfo(seekTime, video.duration);
+    });
+
+    progressBar.addEventListener('change', () => {
+        // 拖曳結束後更新影片時間
+        const seekTime = progressBar.value / 1000;
+        video.currentTime = seekTime;
+        dragging = false;
+    });
+
+    // 9. 儲存畫面（透過 Canvas）
+    saveFrameBtn.addEventListener('click', () => {
+        if (!video.src) return;
+
+        videoCanvas.width = video.videoWidth;
+        videoCanvas.height = video.videoHeight;
+        
+        // 將當前影片幀繪製到 Canvas
+        ctx.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
+
+        // 將 Canvas 轉換為圖片並下載
+        const imageURL = videoCanvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = imageURL;
+        link.download = `frame_${Math.floor(video.currentTime * assumedFPS)}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    // 10. 全螢幕
+    fullscreenBtn.addEventListener('click', () => {
+        if (!video.src) return;
+        
+        if (playerContainer.requestFullscreen) {
+            playerContainer.requestFullscreen();
+        } else if (playerContainer.webkitRequestFullscreen) { /* Safari/Chrome */
+            playerContainer.webkitRequestFullscreen();
+        } else if (video.webkitEnterFullscreen) { // iOS Safari 專有的播放器全屏
+             video.webkitEnterFullscreen();
+        }
+    });
+
+    // 額外：處理全螢幕退出後的播放器狀態
+    document.addEventListener('fullscreenchange', (e) => {
+        // 退出全螢幕時，iOS Safari 可能會將 video.paused 設為 true
+        // 這裡可以檢查並調整控制面板的狀態
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+             // 退出全螢幕
+        }
+    });
+    
+    // 針對 iOS/Safari 播放影片時的自動行為
+    video.addEventListener('loadeddata', () => {
+        // 影片載入完成，嘗試獲取或估計 FPS
+        if (video.duration > 0) {
+            assumedFPS = 30; // 實際專案中可能需要更複雜的偵測邏輯
+            frameDuration = 1 / assumedFPS;
+            fpsInfo.textContent = `FPS: ${assumedFPS} (預估)`;
+            // 嘗試播放，通常會失敗，但可以讓瀏覽器準備好
+            video.play().catch(e => console.log('Video play attempt failed on load.'));
+        }
+    });
+
+    // 初始化時先移除原生控制項
+    video.removeAttribute('controls'); 
+
 </script>
-
 </body>
 </html>
