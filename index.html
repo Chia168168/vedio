@@ -261,8 +261,13 @@
     let currentRate = '1.0'; 
     let isDragging = false; 
 
-    // --- FPS 處理邏輯 ---
 
+
+    // --- 全局變數用於儲存上一次的 Blob URL ---
+    let lastObjectURL = null; 
+
+    // --- FPS 處理邏輯 (保持不變) ---
+    // ... (updateFps 和 FPS 相關事件處理保持不變) ...
     function updateFps(fpsValue) {
         let newFps;
         if (fpsValue === 'custom') {
@@ -293,8 +298,8 @@
     });
     updateFps(fpsSelect.value); 
 
-    // --- 速度選單邏輯 ---
-
+    // --- 速度選單邏輯 (保持不變) ---
+    // ... (speedBtn 和 speedOptions 相關事件處理保持不變) ...
     speedBtn.addEventListener('click', (e) => {
         const rect = speedBtn.getBoundingClientRect();
         const videoWrapperRect = videoWrapper.getBoundingClientRect();
@@ -335,38 +340,70 @@
         }
     });
 
+
     // --- 影片控制邏輯 ---
     
+    // 1. 載入影片檔案 (重要修正區域)
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+            // 撤銷前一個 Blob URL，釋放記憶體
+            if (lastObjectURL) {
+                URL.revokeObjectURL(lastObjectURL);
+            }
+            
             const fileURL = URL.createObjectURL(file);
+            lastObjectURL = fileURL; // 儲存新的 URL
+
             video.src = fileURL;
-            video.load();
+            video.load(); // 必須呼叫 load() 讓影片元素讀取新的 URL
+            
             video.removeAttribute('controls');
             togglePlayBtn.textContent = '▶';
+            
+            // 重設速度選項
             currentRate = '1.0'; 
             speedOptions.forEach(b => b.classList.remove('active'));
-            speedMenu.querySelector('[data-rate="1.0"]').classList.add('active');
+            const defaultSpeedBtn = speedMenu.querySelector('[data-rate="1.0"]');
+            if (defaultSpeedBtn) defaultSpeedBtn.classList.add('active');
+
+            // 確保影片處於暫停和從頭開始的狀態
+            video.currentTime = 0; 
+            updateTimeInfo(0, video.duration || 0);
         }
     });
 
+    // 2. 元數據載入完成後 (保持不變)
     video.addEventListener('loadedmetadata', () => {
         progressBar.max = Math.floor(video.duration * 1000);
         progressBar.value = 0;
         updateTimeInfo();
     });
 
+    // 3. 播放/暫停按鈕 (保持不變)
     togglePlayBtn.addEventListener('click', () => {
         if (!video.src) return;
+
         if (video.paused || video.ended) {
-            if (currentRate === '1fps') {
-                video.playbackRate = frameDuration;
-            } else {
-                video.playbackRate = parseFloat(currentRate);
+            // 嘗試播放時，必須處理 iOS 的 Promise
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.then(_ => {
+                    // 播放成功
+                    if (currentRate === '1fps') {
+                        video.playbackRate = frameDuration;
+                    } else {
+                        video.playbackRate = parseFloat(currentRate);
+                    }
+                    togglePlayBtn.textContent = '⏸';
+                }).catch(error => {
+                    // 播放失敗 (例如: 沒有用戶互動或檔案問題)
+                    console.error("Video Playback Error:", error);
+                    alert("影片無法播放，請確認檔案有效或嘗試再次點擊播放按鈕。");
+                    video.pause();
+                    togglePlayBtn.textContent = '▶';
+                });
             }
-            video.play();
-            togglePlayBtn.textContent = '⏸';
         } else {
             video.pause();
             togglePlayBtn.textContent = '▶';
@@ -376,6 +413,7 @@
     video.addEventListener('play', () => { togglePlayBtn.textContent = '⏸'; });
     video.addEventListener('pause', () => { togglePlayBtn.textContent = '▶'; });
     
+    // 4. 時間/幀數資訊更新 (保持不變)
     video.addEventListener('timeupdate', () => {
         if (!video.duration) return;
         if (!isDragging) {
@@ -397,6 +435,7 @@
         frameInfo.textContent = `F: ${currentFrame}`;
     }
 
+    // 5. 前進/後退（秒數）和 逐幀 (保持不變)
     document.getElementById('stepBackward').addEventListener('click', () => {
         if (!video.src) return; video.currentTime = Math.max(0, video.currentTime - 0.1); video.pause();
     });
@@ -416,6 +455,7 @@
         video.currentTime = Math.min(video.duration, targetFrame * frameDuration);
     });
 
+    // 6. 進度條拖曳控制 (保持不變)
     progressBar.addEventListener('mousedown', () => isDragging = true);
     progressBar.addEventListener('mouseup', () => isDragging = false);
     progressBar.addEventListener('input', () => {
@@ -429,6 +469,7 @@
         if (!video.paused) video.pause();
     });
 
+    // 7. 儲存畫面（透過 Canvas） (保持不變)
     saveFrameBtn.addEventListener('click', () => {
         if (!video.src) return;
         videoCanvas.width = video.videoWidth;
@@ -443,6 +484,7 @@
         document.body.removeChild(link);
     });
 
+    // 8. 全螢幕 (保持不變)
     fullscreenBtn.addEventListener('click', () => {
         if (!video.src) return;
         if (playerContainer.requestFullscreen) {
@@ -454,6 +496,21 @@
         }
     });
 
+    // 9. 處理應用程式恢復/聚焦事件 (PWA 專用 - 輔助措施)
+    window.addEventListener('focus', () => {
+        // 如果 App 從後台恢復，嘗試重新載入影片。
+        // 這對於 Blob URL 在長時間後台運行後失效的情況有幫助。
+        if (video.src && lastObjectURL) {
+             // 只有在當前是暫停狀態，且是 PWA/主畫面App 時執行
+             if (video.paused) {
+                 video.load(); 
+                 video.currentTime = 0; // 重設到第一幀
+                 updateTimeInfo(0, video.duration || 0);
+                 console.log("App restored: Video reloaded.");
+             }
+        }
+    });
 </script>
+
 </body>
 </html>
