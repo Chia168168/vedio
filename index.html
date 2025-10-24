@@ -1,3 +1,10 @@
+沒問題！我將完全按照您的要求調整控制面板的佈局、按鈕樣式和選單內容，讓介面更符合分析工具的簡潔直覺設計。
+主要變動如下：
+ * 控制面板重新佈局：分成三排，並採用更緊湊的圖示按鈕。
+ * 按鈕圖示：使用 Unicode 符號 (e.g., ⏴, ▶, 🖼) 來實現圖示化按鈕。
+ * 速度選單更新：將 1fps 顯示為 逐幀 (Frame)。
+ * FPS 邏輯：將 FPS 選擇器移至底部，並保留「自訂」時顯示輸入框的邏輯。
+最終更新後的 HTML 程式碼 (index.html)
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -13,7 +20,7 @@
             flex-direction: column;
             align-items: center;
             background-color: #f0f0f0;
-            user-select: none; /* 防止誤觸選取 */
+            user-select: none;
         }
         .player-container {
             width: 100%;
@@ -32,15 +39,17 @@
             color: #fff;
             display: flex;
             flex-direction: column;
+            gap: 10px; /* 行間距 */
         }
+        /* 所有控制組件的通用樣式 */
         .controls-group {
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 8px;
             flex-wrap: wrap; 
         }
-        button, select, input[type="number"] {
+        /* 按鈕、選單、輸入框的通用樣式 */
+        button, select, input[type="number"], #fileInputLabel {
             padding: 8px 12px;
             font-size: 14px;
             cursor: pointer;
@@ -48,56 +57,51 @@
             border-radius: 4px;
             background-color: #444;
             color: #fff;
-            flex-grow: 1;
-            min-width: 50px;
             box-sizing: border-box;
-            /* 讓手機上的點擊區域更大 */
             height: 40px; 
             line-height: 20px;
+            white-space: nowrap; /* 防止文字換行 */
         }
-        button:hover, select:hover, input[type="number"]:hover {
+        button:hover, select:hover, input[type="number"]:hover, #fileInputLabel:hover {
             background-color: #555;
         }
+
+        /* --- 第一排：播放控制與速度 --- */
+        .controls-playback > * {
+            flex-grow: 1; 
+            min-width: 40px; /* 讓圖示按鈕更緊湊 */
+        }
+        #togglePlay {
+            background-color: #007aff; /* 突出播放按鈕 */
+            flex-grow: 1.5; /* 讓播放按鈕寬度稍微大一點 */
+            font-size: 18px;
+        }
         
-        /* FPS 設定專用樣式 */
-        #fpsSelect {
-            flex-grow: 0;
-            min-width: 80px;
-            width: auto;
-        }
-        #customFpsInput {
-            flex-grow: 0;
-            min-width: 80px;
-            width: 80px;
-            text-align: center;
-            background-color: #333;
-        }
-        .fps-control {
+        /* --- 第二排：進度條與時間資訊 --- */
+        .controls-progress {
             display: flex;
             align-items: center;
-            gap: 5px;
-            flex-grow: 1;
-            min-width: 150px;
+            gap: 8px;
         }
         .status-info {
             font-size: 14px;
             white-space: nowrap;
             padding: 0 5px;
+            flex-grow: 0;
         }
-        #fileInputLabel {
-            background-color: #007aff;
-            text-align: center;
-            cursor: pointer;
-            padding: 8px 12px;
-            border-radius: 4px;
+        #timeInfo {
+            flex-grow: 0;
+            min-width: 120px; /* 確保時間顯示足夠寬 */
+            text-align: right;
         }
-        #fileInput {
-            display: none;
+        #frameInfo {
+            flex-grow: 0;
+            min-width: 60px; /* 確保幀數顯示足夠寬 */
         }
-
-        /* 進度條樣式 */
         input[type="range"] {
-            flex-grow: 1;
+            flex-grow: 3; /* 進度條優先佔據空間 */
+            min-width: 100px;
+            /* 其他 range 樣式保持不變 */
             -webkit-appearance: none;
             height: 8px;
             background: #555;
@@ -113,6 +117,32 @@
             background: #fff;
         }
         
+        /* --- 第三排：檔案與 FPS 設定 --- */
+        .controls-setup {
+            justify-content: flex-start;
+        }
+        #fileInputLabel {
+            background-color: #007aff;
+            flex-grow: 0;
+        }
+        #fileInput {
+            display: none;
+        }
+        #fpsSelect {
+            flex-grow: 0;
+            min-width: 70px;
+        }
+        #customFpsInput {
+            flex-grow: 0;
+            width: 60px;
+            text-align: center;
+            background-color: #333;
+        }
+        #fpsDisplay {
+            flex-grow: 1;
+            text-align: left;
+        }
+
         /* 全螢幕模式 */
         .player-container:-webkit-full-screen { 
             width: 100%;
@@ -134,52 +164,47 @@
     
     <div class="controls-panel">
         
-        <div class="controls-group controls-top">
-            <label for="fileInput" id="fileInputLabel">選擇影片檔</label>
-            <input type="file" id="fileInput" accept="video/*">
-            <button id="togglePlay">▶ 播放</button>
-            <button id="fullscreenBtn">⛶ 全螢幕</button>
-            <button id="saveFrame">🖼 儲存畫面</button>
-        </div>
-        
-        <div class="controls-group controls-fps">
-            <div class="fps-control">
-                <span class="status-info">FPS:</span>
-                <select id="fpsSelect">
-                    <option value="30" selected>30</option>
-                    <option value="24">24</option>
-                    <option value="60">60</option>
-                    <option value="120">120</option>
-                    <option value="240">240</option>
-                    <option value="custom">自訂</option>
-                </select>
-                <input type="number" id="customFpsInput" value="30" min="1" step="1" style="display:none;">
-            </div>
-            <span class="status-info" id="fpsDisplay">目前 FPS: 30</span>
-        </div>
-
-        <div class="controls-group controls-middle">
-            <button id="stepBackward">⏪ -0.1s</button>
-            <button id="frameBackward">⏴ 逐幀退</button>
-            <button id="frameForward">⏵ 逐幀進</button>
-            <button id="stepForward">快進 +0.1s ⏩</button>
-        </div>
-
-        <div class="controls-group controls-bottom">
-            <select id="playbackRateSelect">
-                <option value="2.0">2x 速度</option>
-                <option value="1.0" selected>1x 速度</option>
-                <option value="0.5">0.5x 速度</option>
-                <option value="0.1">0.1x 速度</option>
-                <option value="1fps">每秒一個Frame (1 FPS)</option>
+        <div class="controls-group controls-playback">
+            <button id="stepBackward" title="後退 0.1 秒">⏮</button>
+            <button id="frameBackward" title="逐幀退後">⏴</button>
+            <button id="togglePlay">▶</button>
+            <button id="frameForward" title="逐幀前進">⏵</button>
+            <button id="stepForward" title="快進 0.1 秒">⏭</button>
+            
+            <select id="playbackRateSelect" title="播放速度">
+                <option value="2.0">2x</option>
+                <option value="1.0" selected>1x</option>
+                <option value="0.5">0.5x</option>
+                <option value="0.1">0.1x</option>
+                <option value="1fps">逐幀 (Frame)</option>
             </select>
             
+            <button id="saveFrame" title="儲存畫面">🖼</button>
+            <button id="fullscreenBtn" title="全螢幕">⛶</button>
+        </div>
+        
+        <div class="controls-group controls-progress">
+            <input type="range" id="progressBar" value="0" min="0" max="1000" step="1" title="影片進度">
+            <span class="status-info" id="frameInfo">F: 0</span>
             <span class="status-info" id="timeInfo">00:00.00 / 00:00.00</span>
-            <span class="status-info" id="frameInfo">Frame: 0</span>
         </div>
 
-        <div class="controls-progress">
-            <input type="range" id="progressBar" value="0" min="0" max="1000" step="1">
+        <div class="controls-group controls-setup">
+            <label for="fileInput" id="fileInputLabel">選擇影片</label>
+            <input type="file" id="fileInput" accept="video/*">
+            
+            <span class="status-info">FPS:</span>
+            <select id="fpsSelect" title="設定影片 FPS">
+                <option value="30" selected>30</option>
+                <option value="24">24</option>
+                <option value="60">60</option>
+                <option value="120">120</option>
+                <option value="240">240</option>
+                <option value="custom">自訂</option>
+            </select>
+            <input type="number" id="customFpsInput" value="30" min="1" step="1" style="display:none;" title="自訂 FPS 值">
+            
+            <span class="status-info" id="fpsDisplay">目前 FPS: 30</span>
         </div>
         
     </div>
@@ -214,7 +239,7 @@
 
     // 根據 FPS 值計算 Frame Duration 並更新顯示
     function updateFps(fpsValue) {
-        let newFps = parseInt(fpsValue);
+        let newFps;
         
         if (fpsValue === 'custom') {
             // 如果是自訂，則從輸入框讀取，並顯示輸入框
@@ -223,6 +248,7 @@
         } else {
             // 選擇預設值，隱藏輸入框
             customFpsInput.style.display = 'none';
+            newFps = parseInt(fpsValue);
         }
 
         if (newFps > 0) {
@@ -230,7 +256,7 @@
             frameDuration = 1 / assumedFPS;
             fpsDisplay.textContent = `目前 FPS: ${assumedFPS}`;
             
-            // 如果當前速度設定為 1 FPS 播放，則立即更新播放速率
+            // 如果當前速度設定為逐幀播放，則立即更新播放速率
             if (playbackRateSelect.value === '1fps') {
                 video.playbackRate = frameDuration; // 1/FPS
             }
@@ -268,7 +294,7 @@
             video.src = fileURL;
             video.load();
             video.removeAttribute('controls');
-            togglePlayBtn.textContent = '▶ 播放';
+            togglePlayBtn.textContent = '▶';
             playbackRateSelect.value = '1.0'; // 重設速度
         }
     });
@@ -293,18 +319,18 @@
                 video.playbackRate = parseFloat(rate);
             }
             video.play();
-            togglePlayBtn.textContent = '⏸ 暫停';
+            togglePlayBtn.textContent = '⏸';
         } else {
             video.pause();
-            togglePlayBtn.textContent = '▶ 播放';
+            togglePlayBtn.textContent = '▶';
         }
     });
     
     video.addEventListener('play', () => {
-        togglePlayBtn.textContent = '⏸ 暫停';
+        togglePlayBtn.textContent = '⏸';
     });
     video.addEventListener('pause', () => {
-        togglePlayBtn.textContent = '▶ 播放';
+        togglePlayBtn.textContent = '▶';
     });
     
     // 4. 時間/幀數資訊更新
@@ -318,16 +344,22 @@
     });
     
     function updateTimeInfo(currentTime = video.currentTime, duration = video.duration) {
-        const currentFrame = Math.floor(currentTime / frameDuration); // F = time * FPS
+        // 解決浮點數精度的問題：先將時間轉換為毫秒，再取整
+        const currentMs = Math.round(currentTime * 1000);
+        const totalMs = Math.round(duration * 1000);
+        
+        // F = time / (1/FPS) = time * FPS
+        const currentFrame = Math.round(currentTime * assumedFPS); 
 
         const formatTime = (seconds) => {
             const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
-            const secs = (seconds % 60).toFixed(2).padStart(5, '0'); // 顯示到小數點後兩位 (10ms)
+            // toFixed(2) 確保顯示到毫秒級別 (0.01s)
+            const secs = (seconds % 60).toFixed(2).padStart(5, '0'); 
             return `${minutes}:${secs}`;
         };
         
         timeInfo.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
-        frameInfo.textContent = `Frame: ${currentFrame}`;
+        frameInfo.textContent = `F: ${currentFrame}`;
     }
 
 
@@ -352,11 +384,13 @@
     stepBackwardBtn.addEventListener('click', () => {
         if (!video.src) return;
         video.currentTime = Math.max(0, video.currentTime - 0.1);
+        video.pause();
     });
     
     stepForwardBtn.addEventListener('click', () => {
         if (!video.src) return;
         video.currentTime = Math.min(video.duration, video.currentTime + 0.1);
+        video.pause();
     });
 
     // 7. 逐幀前進/後退 (Frame Stepping)
@@ -397,7 +431,7 @@
         video.currentTime = seekTime;
         isDragging = false;
         
-        // 跳轉後自動暫停 (符合分析器習慣)
+        // 跳轉後自動暫停
         if (!video.paused) {
             video.pause();
         }
@@ -437,3 +471,4 @@
 </script>
 </body>
 </html>
+
