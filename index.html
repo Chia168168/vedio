@@ -51,39 +51,33 @@
             flex-grow: 1;
             min-width: 50px;
             box-sizing: border-box;
+            /* 讓手機上的點擊區域更大 */
+            height: 40px; 
+            line-height: 20px;
         }
         button:hover, select:hover, input[type="number"]:hover {
             background-color: #555;
         }
         
-        #fpsInput {
+        /* FPS 設定專用樣式 */
+        #fpsSelect {
+            flex-grow: 0;
+            min-width: 80px;
+            width: auto;
+        }
+        #customFpsInput {
             flex-grow: 0;
             min-width: 80px;
             width: 80px;
             text-align: center;
             background-color: #333;
         }
-        
-        #fpsLabel {
-            flex-grow: 0;
-            min-width: auto;
-        }
-
-        input[type="range"] {
+        .fps-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
             flex-grow: 1;
-            -webkit-appearance: none;
-            height: 8px;
-            background: #555;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            background: #fff;
+            min-width: 150px;
         }
         .status-info {
             font-size: 14px;
@@ -99,6 +93,24 @@
         }
         #fileInput {
             display: none;
+        }
+
+        /* 進度條樣式 */
+        input[type="range"] {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            height: 8px;
+            background: #555;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #fff;
         }
         
         /* 全螢幕模式 */
@@ -131,9 +143,19 @@
         </div>
         
         <div class="controls-group controls-fps">
-            <span id="fpsLabel">設定 FPS:</span>
-            <input type="number" id="fpsInput" value="30" min="1" step="1">
-            <span class="status-info" id="fpsInfo">FPS: 30 (預設)</span>
+            <div class="fps-control">
+                <span class="status-info">FPS:</span>
+                <select id="fpsSelect">
+                    <option value="30" selected>30</option>
+                    <option value="24">24</option>
+                    <option value="60">60</option>
+                    <option value="120">120</option>
+                    <option value="240">240</option>
+                    <option value="custom">自訂</option>
+                </select>
+                <input type="number" id="customFpsInput" value="30" min="1" step="1" style="display:none;">
+            </div>
+            <span class="status-info" id="fpsDisplay">目前 FPS: 30</span>
         </div>
 
         <div class="controls-group controls-middle">
@@ -149,11 +171,11 @@
                 <option value="1.0" selected>1x 速度</option>
                 <option value="0.5">0.5x 速度</option>
                 <option value="0.1">0.1x 速度</option>
-                <option value="1fps">每秒一個frame播放 (1 FPS)</option>
+                <option value="1fps">每秒一個Frame (1 FPS)</option>
             </select>
             
-            <span class="status-info" id="timeInfo">00:00 / 00:00</span>
-            <span class="status-info" id="frameInfo">F: 0</span>
+            <span class="status-info" id="timeInfo">00:00.00 / 00:00.00</span>
+            <span class="status-info" id="frameInfo">Frame: 0</span>
         </div>
 
         <div class="controls-progress">
@@ -177,8 +199,9 @@
     const progressBar = document.getElementById('progressBar');
     const timeInfo = document.getElementById('timeInfo');
     const frameInfo = document.getElementById('frameInfo');
-    const fpsInfo = document.getElementById('fpsInfo');
-    const fpsInput = document.getElementById('fpsInput');
+    const fpsSelect = document.getElementById('fpsSelect');
+    const customFpsInput = document.getElementById('customFpsInput');
+    const fpsDisplay = document.getElementById('fpsDisplay');
     const playerContainer = document.getElementById('playerContainer');
     const videoCanvas = document.getElementById('videoCanvas');
     const ctx = videoCanvas.getContext('2d');
@@ -188,26 +211,51 @@
     let isDragging = false; 
 
     // --- FPS 處理邏輯 ---
-    function updateFps() {
-        const newFps = parseInt(fpsInput.value);
+
+    // 根據 FPS 值計算 Frame Duration 並更新顯示
+    function updateFps(fpsValue) {
+        let newFps = parseInt(fpsValue);
+        
+        if (fpsValue === 'custom') {
+            // 如果是自訂，則從輸入框讀取，並顯示輸入框
+            customFpsInput.style.display = 'block';
+            newFps = parseInt(customFpsInput.value);
+        } else {
+            // 選擇預設值，隱藏輸入框
+            customFpsInput.style.display = 'none';
+        }
+
         if (newFps > 0) {
             assumedFPS = newFps;
             frameDuration = 1 / assumedFPS;
-            fpsInfo.textContent = `FPS: ${assumedFPS} (用戶設定)`;
+            fpsDisplay.textContent = `目前 FPS: ${assumedFPS}`;
             
             // 如果當前速度設定為 1 FPS 播放，則立即更新播放速率
             if (playbackRateSelect.value === '1fps') {
                 video.playbackRate = frameDuration; // 1/FPS
             }
-        } else {
-            fpsInput.value = assumedFPS; // 無效輸入則回復
+        } else if (fpsValue !== 'custom') {
+            // 如果無效，則重設為選單上的值 (除非是自訂選項)
+            fpsSelect.value = assumedFPS.toString();
         }
+
         updateTimeInfo(); // 更新 Frame 顯示
     }
     
+    // FPS 選單變動
+    fpsSelect.addEventListener('change', (e) => {
+        updateFps(e.target.value);
+    });
+
+    // 自訂 FPS 輸入框變動
+    customFpsInput.addEventListener('change', (e) => {
+        if (fpsSelect.value === 'custom') {
+            updateFps(e.target.value);
+        }
+    });
+
     // 初始化 FPS
-    updateFps(); 
-    fpsInput.addEventListener('change', updateFps);
+    updateFps(fpsSelect.value); 
 
 
     // --- 影片事件處理 ---
@@ -237,6 +285,13 @@
         if (!video.src) return;
 
         if (video.paused || video.ended) {
+            // 在播放前，確保播放速率是當前選單的值
+            const rate = playbackRateSelect.value;
+            if (rate === '1fps') {
+                video.playbackRate = frameDuration;
+            } else {
+                video.playbackRate = parseFloat(rate);
+            }
             video.play();
             togglePlayBtn.textContent = '⏸ 暫停';
         } else {
@@ -263,18 +318,16 @@
     });
     
     function updateTimeInfo(currentTime = video.currentTime, duration = video.duration) {
-        const currentSeconds = Math.floor(currentTime);
-        const totalSeconds = Math.floor(duration);
-        const currentFrame = Math.floor(currentTime / frameDuration); // F = time / (1/FPS) = time * FPS
+        const currentFrame = Math.floor(currentTime / frameDuration); // F = time * FPS
 
         const formatTime = (seconds) => {
             const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
-            const secs = (seconds % 60).toFixed(2).padStart(5, '0'); // 顯示到毫秒
+            const secs = (seconds % 60).toFixed(2).padStart(5, '0'); // 顯示到小數點後兩位 (10ms)
             return `${minutes}:${secs}`;
         };
         
         timeInfo.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
-        frameInfo.textContent = `F: ${currentFrame}`;
+        frameInfo.textContent = `Frame: ${currentFrame}`;
     }
 
 
@@ -282,13 +335,16 @@
     playbackRateSelect.addEventListener('change', (e) => {
         const rate = e.target.value;
         if (!video.src) return;
-
-        if (rate === '1fps') {
-            // 設置為每幀時間長度 (1/FPS)
-            video.playbackRate = frameDuration;
-        } else {
-            video.playbackRate = parseFloat(rate);
+        
+        if (!video.paused) {
+            if (rate === '1fps') {
+                // 設置為每幀時間長度 (1/FPS)
+                video.playbackRate = frameDuration;
+            } else {
+                video.playbackRate = parseFloat(rate);
+            }
         }
+        // 如果是暫停狀態，playbackRate 設置會在下次 play() 時生效
     });
 
 
@@ -305,19 +361,21 @@
 
     // 7. 逐幀前進/後退 (Frame Stepping)
     frameBackwardBtn.addEventListener('click', () => {
-        if (!video.src) return;
+        if (!video.src || isNaN(frameDuration)) return;
         video.pause();
-        // 確保時間回到最近的幀邊界，然後減去一幀
-        let currentFrame = Math.floor(video.currentTime / frameDuration);
+        
+        // 確保跳到精確的幀位置
+        let currentFrame = Math.round(video.currentTime / frameDuration);
         let targetFrame = Math.max(0, currentFrame - 1);
         video.currentTime = targetFrame * frameDuration;
     });
 
     frameForwardBtn.addEventListener('click', () => {
-        if (!video.src) return;
+        if (!video.src || isNaN(frameDuration)) return;
         video.pause();
-        // 確保時間從最近的幀邊界開始，然後加上一幀
-        let currentFrame = Math.floor(video.currentTime / frameDuration);
+        
+        // 確保跳到精確的幀位置
+        let currentFrame = Math.round(video.currentTime / frameDuration);
         let targetFrame = currentFrame + 1;
         video.currentTime = Math.min(video.duration, targetFrame * frameDuration);
     });
@@ -338,9 +396,10 @@
         const seekTime = progressBar.value / 1000;
         video.currentTime = seekTime;
         isDragging = false;
-        // 播放頭跳轉後，確保播放器處於暫停狀態
-        if (video.paused && togglePlayBtn.textContent !== '▶ 播放') {
-             togglePlayBtn.textContent = '▶ 播放';
+        
+        // 跳轉後自動暫停 (符合分析器習慣)
+        if (!video.paused) {
+            video.pause();
         }
     });
 
