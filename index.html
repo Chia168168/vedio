@@ -19,19 +19,25 @@
             width: 100%;
             max-width: 900px;
             background-color: #333;
-            /* 讓 controls-overlay 相對於此容器定位 */
-            position: relative; 
+            /* 移除 position: relative，因為現在由 video-wrapper 負責定位浮水印 */
         }
+        
+        /* 新增的定位容器 */
+        .video-wrapper {
+            position: relative; /* 關鍵：讓浮水印按鈕相對於此容器定位 */
+            line-height: 0; /* 確保 videoPlayer 下方沒有多餘空白 */
+        }
+
         #videoPlayer {
             width: 100%;
             display: block;
             background-color: #000;
         }
-
+        
         /* --- 浮水印播放控制區域 (第一排按鈕) --- */
         .controls-overlay {
             position: absolute;
-            bottom: 10px; /* 距離影片底部，即 controls-panel 的上方 */
+            bottom: 10px; /* 距離 videoPlayer 底部 10px */
             left: 50%;
             transform: translateX(-50%); /* 水平居中 */
             display: flex;
@@ -41,7 +47,6 @@
             background-color: rgba(0, 0, 0, 0.5); /* 半透明背景 */
             border-radius: 8px;
             z-index: 500; 
-            /* 讓按鈕不要超過影片寬度 */
             max-width: 90%; 
         }
         
@@ -72,7 +77,6 @@
         /* --- 速度選單 (浮動) --- */
         .speed-menu {
             position: absolute;
-            /* 這些定位會在 JS 中根據 speedBtn 重新計算 */
             background-color: #333;
             border-radius: 4px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
@@ -83,7 +87,6 @@
             gap: 4px;
         }
         .speed-menu button {
-            /* 覆寫繼承的浮水印按鈕樣式 */
             background-color: #444; 
             color: #fff;
             padding: 6px 12px;
@@ -112,20 +115,6 @@
             gap: 8px;
             flex-wrap: wrap; 
         }
-        /* 所有控制項的基礎樣式 */
-        button, select, input[type="number"], #fileInputLabel {
-            padding: 8px 12px;
-            font-size: 14px;
-            cursor: pointer;
-            border: none;
-            border-radius: 4px;
-            background-color: #444;
-            color: #fff;
-            box-sizing: border-box;
-            height: 40px; 
-            line-height: 20px;
-            white-space: nowrap;
-        }
         
         /* 第二排：進度條與時間資訊 */
         #timeInfo { min-width: 120px; text-align: right; }
@@ -146,34 +135,56 @@
         #fpsSelect { flex-grow: 0; min-width: 70px; }
         #customFpsInput { flex-grow: 0; width: 60px; text-align: center; background-color: #333; }
         #fpsDisplay { flex-grow: 1; text-align: left; }
-
+        
+        /* 全螢幕模式 */
+        .player-container:-webkit-full-screen, .player-container:fullscreen { 
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            display: flex; /* 確保子元素能正確佈局 */
+            flex-direction: column;
+        }
+        
+        /* 全螢幕時 video-wrapper 佔滿空間 */
+        .player-container:-webkit-full-screen .video-wrapper, 
+        .player-container:fullscreen .video-wrapper {
+            flex-grow: 1;
+        }
+        
+        /* 全螢幕時 controls-panel 保持底部 */
+        .player-container:-webkit-full-screen .controls-panel,
+        .player-container:fullscreen .controls-panel {
+            flex-grow: 0;
+        }
     </style>
 </head>
 <body>
 
 <div class="player-container" id="playerContainer">
-    <video id="videoPlayer" playsinline webkit-playsinline></video>
-    <canvas id="videoCanvas" style="display:none;"></canvas>
     
-    <div class="controls-overlay" id="controlsOverlay">
-        <button id="stepBackward" title="後退 0.1 秒">⏮</button>
-        <button id="frameBackward" title="逐幀退後">⏴</button>
-        <button id="togglePlay">▶</button>
-        <button id="frameForward" title="逐幀前進">⏵</button>
-        <button id="stepForward" title="快進 0.1 秒">⏭</button>
+    <div class="video-wrapper">
+        <video id="videoPlayer" playsinline webkit-playsinline></video>
+        <canvas id="videoCanvas" style="display:none;"></canvas>
         
-        <button id="speedBtn" title="播放速度">⏱</button>
-        <button id="saveFrame" title="儲存畫面">🖼</button>
+        <div class="controls-overlay" id="controlsOverlay">
+            <button id="stepBackward" title="後退 0.1 秒">⏮</button>
+            <button id="frameBackward" title="逐幀退後">⏴</button>
+            <button id="togglePlay">▶</button>
+            <button id="frameForward" title="逐幀前進">⏵</button>
+            <button id="stepForward" title="快進 0.1 秒">⏭</button>
+            
+            <button id="speedBtn" title="播放速度">⏱</button>
+            <button id="saveFrame" title="儲存畫面">🖼</button>
+        </div>
+        
+        <div class="speed-menu" id="speedMenu" style="display:none;">
+            <button data-rate="2.0">2x 速度</button>
+            <button data-rate="1.0" class="active">1x 速度</button>
+            <button data-rate="0.5">0.5x 速度</button>
+            <button data-rate="0.1">0.1x 速度</button>
+            <button data-rate="1fps">逐幀 (Frame)</button>
+        </div>
     </div>
-    
-    <div class="speed-menu" id="speedMenu" style="display:none;">
-        <button data-rate="2.0">2x 速度</button>
-        <button data-rate="1.0" class="active">1x 速度</button>
-        <button data-rate="0.5">0.5x 速度</button>
-        <button data-rate="0.1">0.1x 速度</button>
-        <button data-rate="1fps">逐幀 (Frame)</button>
-    </div>
-
     <div class="controls-panel">
         
         <div class="controls-group controls-progress">
@@ -226,14 +237,14 @@
     const speedBtn = document.getElementById('speedBtn');
     const speedMenu = document.getElementById('speedMenu');
     const speedOptions = speedMenu.querySelectorAll('button');
+    const videoWrapper = document.querySelector('.video-wrapper'); // 新增
 
     let assumedFPS = 30; 
     let frameDuration = 1 / assumedFPS;
     let currentRate = '1.0'; 
     let isDragging = false; 
 
-    // --- FPS 處理邏輯 (保持不變) ---
-
+    // --- FPS 處理邏輯 (不變) ---
     function updateFps(fpsValue) {
         let newFps;
         if (fpsValue === 'custom') {
@@ -258,37 +269,27 @@
 
         updateTimeInfo();
     }
-    
     fpsSelect.addEventListener('change', (e) => updateFps(e.target.value));
     customFpsInput.addEventListener('change', (e) => {
         if (fpsSelect.value === 'custom') updateFps(e.target.value);
     });
-
     updateFps(fpsSelect.value); 
 
     // --- 速度選單邏輯 (修正定位計算) ---
 
     // 顯示/隱藏速度選單
     speedBtn.addEventListener('click', (e) => {
-        // 速度按鈕在 controlsOverlay 內部
         const rect = speedBtn.getBoundingClientRect();
-        const overlayRect = controlsOverlay.getBoundingClientRect();
+        const videoWrapperRect = videoWrapper.getBoundingClientRect();
         
-        // 計算 speedBtn 相對於 controlsOverlay 左邊緣的距離
-        const speedBtnLeftOffset = rect.left - overlayRect.left;
-        
-        // 計算選單應該在 controlsOverlay 內部的位置，使其靠右對齊 speedBtn
-        const menuWidth = 120; // 預估選單寬度
-        const rightPosition = overlayRect.width - (speedBtnLeftOffset + rect.width) + (rect.width / 2) - (menuWidth / 2); // 調整對齊方式
+        // 計算 speedBtn 相對於 videoWrapper 右邊緣的距離
+        const absoluteRight = videoWrapperRect.right - rect.right;
         
         // 確保 speedMenu 浮動在 controlsOverlay 上方
         speedMenu.style.bottom = `${controlsOverlay.offsetHeight + 10}px`; 
         
-        // 由於 speedMenu 的 position: absolute 是相對於 playerContainer
-        // 我們需要計算 speedBtn 距離 playerContainer 右邊緣的距離
-        const containerRect = playerContainer.getBoundingClientRect();
-        const absoluteRight = containerRect.width - rect.right;
-        
+        // 定位 speedMenu 的右側
+        // (absoluteRight - rect.width / 2) 讓選單大約對齊按鈕中心
         speedMenu.style.right = `${absoluteRight - (rect.width / 2) + 20}px`; 
 
         speedMenu.style.display = speedMenu.style.display === 'flex' ? 'none' : 'flex';
