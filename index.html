@@ -1,231 +1,421 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>iPhone 全螢幕影片播放器</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<title>手機影片播放器（含縮圖、逐格、儲存畫面）</title>
 <style>
-:root {
-  --bg: #f8f7fa;
-  --panel: #ffffff;
-  --accent: #6c43ff;
-  --muted: #888;
-  --thumb-h: 64px;
-}
-body {
-  margin: 0; background: var(--bg); font-family: -apple-system, "Noto Sans TC", sans-serif;
-  display: flex; flex-direction: column; align-items: center; padding: 10px;
-}
-.container {
-  width: 100%; max-width: 900px; background: var(--panel); border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.06); padding: 10px;
-}
-video {
-  width: 100%; max-height: 360px; background: #000; border-radius: 8px;
-}
-.controls {
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px;
-}
-button {
-  padding: 8px 12px; border-radius: 10px; font-size: 15px; border: 1px solid #ccc;
-  background: #fff;
-}
-button.accent { background: var(--accent); color: #fff; border: none; }
-#timeDisplay { text-align: center; margin-top: 6px; color: var(--muted); }
-.thumbs {
-  display: flex; overflow-x: auto; white-space: nowrap; gap: 6px; padding: 6px;
-  background: #f9f8fd; border-radius: 8px; margin-top: 8px;
-}
-.thumb { position: relative; flex: 0 0 auto; border-radius: 6px; overflow: hidden; }
-.thumb canvas { height: var(--thumb-h); display: block; }
-.thumb.active::after {
-  content: ""; position: absolute; inset: 3px; border: 3px solid var(--accent); border-radius: 4px;
-}
-.range { width: 100%; }
-.file-label {
-  display: inline-block; padding: 8px 12px; background: #fff; border: 1px solid #ccc;
-  border-radius: 10px; margin-bottom: 8px;
-}
+  :root{
+    --bg:#f7f6fa;
+    --panel:#ffffff;
+    --accent:#6c43ff;
+    --muted:#999;
+    --thumb-h:64px;
+  }
+  html,body{height:100%;margin:0;font-family: -apple-system, "Segoe UI", Roboto, "Noto Sans TC", Arial;}
+  body{background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:10px 8px;box-sizing:border-box}
+  .topbar{width:100%;max-width:900px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .topbar h1{font-size:18px;margin:0}
+  .container{width:100%;max-width:900px;background:var(--panel);border-radius:12px;padding:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+  .video-wrap{background:#000;display:flex;justify-content:center;align-items:center;height:360px;border-radius:8px;overflow:hidden;position:relative}
+  video{max-width:100%;max-height:100%;width:100%;height:100%;background:#000;object-fit:contain}
+  .controls{display:flex;gap:8px;align-items:center;justify-content:center;padding:10px 4px;flex-wrap:wrap}
+  button{background:#fff;border:1px solid #eee;padding:8px 12px;border-radius:10px;font-size:15px}
+  .accent{background:var(--accent);color:#fff;border:0}
+  .small{padding:6px 8px;font-size:13px}
+  .status{display:flex;align-items:center;gap:12px;margin:8px 6px;color:var(--muted);font-size:14px;justify-content:space-between}
+  .progress-row{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .thumbs{height:var(--thumb-h);overflow-x:auto;white-space:nowrap;border-radius:10px;background:linear-gradient(180deg,#faf8ff,#fff);padding:6px;display:flex;gap:6px;align-items:center}
+  .thumb{display:inline-block;width:auto;height:var(--thumb-h);border-radius:6px;overflow:hidden;flex:0 0 auto;position:relative}
+  .thumb canvas{height:100%;display:block}
+  .thumb.active::after{content:"";position:absolute;inset:3px;border-radius:5px;border:3px solid var(--accent);pointer-events:none}
+  .time-display{text-align:center;font-weight:600}
+  input[type=file]{display:none}
+  .file-label{display:inline-block;padding:8px 12px;border-radius:10px;background:#fff;border:1px solid #eee}
+  .range{width:100%}
+  .speed-select, .mode-select, .fps-input{margin-left:6px}
+  @media (max-width:420px){
+    .video-wrap{height:320px}
+    .thumbs{height:54px; --thumb-h:54px}
+  }
 </style>
 </head>
 <body>
 
-<div class="container">
-  <label class="file-label">選擇影片 <input type="file" id="fileInput" accept="video/*" style="display:none"></label>
-  <video id="video" playsinline webkit-playsinline></video>
-
-  <div class="controls">
-    <button id="backBtn">◀◀ 5秒</button>
-    <button id="playBtn" class="accent">播放</button>
-    <button id="forwardBtn">5秒 ▶▶</button>
-    <button id="prevFrameBtn">上格</button>
-    <button id="nextFrameBtn">下格</button>
-    <button id="saveFrameBtn">儲存畫面</button>
-  </div>
-
-  <div id="timeDisplay">00:00.00 / 00:00.00</div>
-
-  <div class="thumbs" id="thumbs"></div>
+<div class="topbar">
+  <h1>Choose Frame（iPhone 用）</h1>
+  <label class="file-label">
+    選影片
+    <input id="fileInput" type="file" accept="video/*">
+  </label>
 </div>
 
+<div class="container">
+  <div class="video-wrap" id="videoWrap">
+    <video id="video" playsinline webkit-playsinline controlslist="nodownload" crossorigin="anonymous"></video>
+    <!-- 可在這放覆蓋按鈕或 loading -->
+  </div>
+
+  <div class="status">
+    <div class="time-display" id="timeDisplay">00:00.00 / 00:00.00 — frame 0</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <label>FPS<input id="fpsInput" class="fps-input" type="number" min="1" value="30" style="width:70px;padding:6px;border-radius:6px;border:1px solid #ddd"></label>
+      <select id="speedSelect" class="speed-select small">
+        <option value="2">2x</option>
+        <option value="1" selected>1x</option>
+        <option value="0.5">0.5x</option>
+        <option value="0.1">0.1x</option>
+        <option value="frame">每秒1frame</option>
+      </select>
+      <button id="saveFrameBtn" class="small">儲存畫面</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="backBtn" class="small">◀◀</button>
+    <button id="playBtn" class="accent">播放</button>
+    <button id="forwardBtn" class="small">▶▶</button>
+    <button id="prevFrameBtn" class="small">上格</button>
+    <button id="nextFrameBtn" class="small">下格</button>
+    <button id="regenThumbs" class="small">生成縮圖</button>
+    <a id="downloadAnchor" style="display:none"></a>
+  </div>
+
+  <div class="progress-row">
+    <input type="range" id="seekRange" class="range" min="0" max="100" value="0" step="0.01">
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+</div>
+
+<!-- hidden canvas for snapshot / thumbnails -->
 <canvas id="hiddenCanvas" style="display:none"></canvas>
-<a id="downloadAnchor" style="display:none"></a>
 
 <script>
-const video = document.getElementById('video');
-const fileInput = document.getElementById('fileInput');
-const playBtn = document.getElementById('playBtn');
-const backBtn = document.getElementById('backBtn');
-const forwardBtn = document.getElementById('forwardBtn');
-const saveFrameBtn = document.getElementById('saveFrameBtn');
-const prevFrameBtn = document.getElementById('prevFrameBtn');
-const nextFrameBtn = document.getElementById('nextFrameBtn');
-const timeDisplay = document.getElementById('timeDisplay');
-const thumbs = document.getElementById('thumbs');
-const hiddenCanvas = document.getElementById('hiddenCanvas');
-const downloadAnchor = document.getElementById('downloadAnchor');
+(function(){
+  const fileInput = document.getElementById('fileInput');
+  const video = document.getElementById('video');
+  const playBtn = document.getElementById('playBtn');
+  const backBtn = document.getElementById('backBtn');
+  const forwardBtn = document.getElementById('forwardBtn');
+  const saveFrameBtn = document.getElementById('saveFrameBtn');
+  const thumbsEl = document.getElementById('thumbs');
+  const seekRange = document.getElementById('seekRange');
+  const timeDisplay = document.getElementById('timeDisplay');
+  const speedSelect = document.getElementById('speedSelect');
+  const fpsInput = document.getElementById('fpsInput');
+  const prevFrameBtn = document.getElementById('prevFrameBtn');
+  const nextFrameBtn = document.getElementById('nextFrameBtn');
+  const regenThumbsBtn = document.getElementById('regenThumbs');
+  const hiddenCanvas = document.getElementById('hiddenCanvas');
+  const downloadAnchor = document.getElementById('downloadAnchor');
 
-let duration = 0;
-let fps = 30;
-let thumbCount = 30;
-let dragging = false;
+  let thumbs = [];
+  let duration = 0;
+  let updatingSeek = false;
+  let thumbCount = 40; // default thumbnails (adjustable)
+  let currentThumbIndex = -1;
+  let frameTimer = null;
+  let isPlayingPerFrameMode = false;
 
-// 載入影片
-fileInput.addEventListener('change', e => {
-  const f = e.target.files[0];
-  if (!f) return;
-  const url = URL.createObjectURL(f);
-  video.src = url;
-  video.load();
-});
-
-video.addEventListener('loadedmetadata', async () => {
-  duration = video.duration;
-  fps = await getFPS(video) || 30;
-  console.log('偵測到 FPS:', fps);
-  updateTime();
-  generateThumbs();
-});
-
-// 播放/暫停
-playBtn.addEventListener('click', () => {
-  if (video.paused) {
-    video.play();
-    playBtn.textContent = '暫停';
-  } else {
-    video.pause();
-    playBtn.textContent = '播放';
-  }
-});
-video.addEventListener('ended', () => playBtn.textContent = '播放');
-
-// 前進/後退
-backBtn.onclick = () => video.currentTime = Math.max(0, video.currentTime - 5);
-forwardBtn.onclick = () => video.currentTime = Math.min(duration, video.currentTime + 5);
-
-// 上格/下格
-prevFrameBtn.onclick = () => video.currentTime = Math.max(0, video.currentTime - 1/fps);
-nextFrameBtn.onclick = () => video.currentTime = Math.min(duration, video.currentTime + 1/fps);
-
-// 儲存畫面
-saveFrameBtn.onclick = () => {
-  const w = video.videoWidth, h = video.videoHeight;
-  hiddenCanvas.width = w; hiddenCanvas.height = h;
-  hiddenCanvas.getContext('2d').drawImage(video, 0, 0, w, h);
-  hiddenCanvas.toBlob(blob => {
-    const url = URL.createObjectURL(blob);
-    downloadAnchor.href = url;
-    downloadAnchor.download = `frame_${Math.floor(video.currentTime*1000)}.png`;
-    downloadAnchor.click();
+  // load file
+  fileInput.addEventListener('change', (e)=>{
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    const url = URL.createObjectURL(f);
+    loadVideoURL(url, f.name);
   });
-};
 
-// 更新時間顯示
-video.addEventListener('timeupdate', updateTime);
-function updateTime() {
-  const t = video.currentTime, total = video.duration || 0;
-  const format = x => {
-    const m = Math.floor(x/60).toString().padStart(2,'0');
-    const s = Math.floor(x%60).toString().padStart(2,'0');
-    const cs = Math.floor((x%1)*100).toString().padStart(2,'0');
-    return `${m}:${s}.${cs}`;
-  };
-  timeDisplay.textContent = `${format(t)} / ${format(total)} (${Math.floor(t*fps)} frame)`;
-  highlightThumb(t);
-}
-
-// 自動偵測FPS
-async function getFPS(video) {
-  try {
-    const track = video.captureStream().getVideoTracks()[0];
-    if (track.getSettings && track.getSettings().frameRate)
-      return track.getSettings().frameRate;
-  } catch(e){ console.log('無法自動抓FPS，使用預設30'); }
-  return 30;
-}
-
-// 生成縮圖
-async function generateThumbs() {
-  thumbs.innerHTML = '';
-  const step = duration / thumbCount;
-  const w = 160, h = 90;
-  for (let i = 0; i < thumbCount; i++) {
-    const t = i * step;
-    const canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    await seekAndDraw(t, ctx, w, h);
-    const div = document.createElement('div');
-    div.className = 'thumb';
-    div.dataset.time = t;
-    div.appendChild(canvas);
-    thumbs.appendChild(div);
-  }
-  // 拖曳事件
-  thumbs.addEventListener('touchstart', startDrag, {passive:true});
-  thumbs.addEventListener('touchmove', dragMove, {passive:true});
-  thumbs.addEventListener('touchend', endDrag);
-  thumbs.querySelectorAll('.thumb').forEach(el=>{
-    el.addEventListener('click',()=>{ video.currentTime=parseFloat(el.dataset.time); });
-  });
-}
-
-// 拖曳縮圖即時跳轉
-function startDrag(e){ dragging=true; dragMove(e); }
-function dragMove(e){
-  if(!dragging) return;
-  const touch = e.touches[0];
-  const rect = thumbs.getBoundingClientRect();
-  const x = touch.clientX - rect.left + thumbs.scrollLeft;
-  const ratio = x / rect.width;
-  const time = Math.max(0, Math.min(duration, duration * ratio));
-  video.currentTime = time;
-}
-function endDrag(){ dragging=false; }
-
-async function seekAndDraw(t, ctx, w, h){
-  return new Promise(resolve=>{
-    const handler = () => {
-      video.removeEventListener('seeked', handler);
-      try { ctx.drawImage(video, 0, 0, w, h); } catch(e){}
-      resolve();
+  function loadVideoURL(url, filename){
+    stopFrameMode();
+    video.src = url;
+    video.load();
+    video.onloadedmetadata = ()=>{
+      duration = video.duration || 0;
+      seekRange.max = duration;
+      updateTimeDisplay();
+      // auto generate thumbnails after metadata loaded
+      generateThumbnails();
     };
-    video.addEventListener('seeked', handler);
-    video.currentTime = Math.min(duration, t);
-  });
-}
+    video.onplay = ()=>{ updatePlayButton(); }
+    video.onpause = ()=>{ updatePlayButton(); stopFrameModeIfNeeded(); }
+    video.ontimeupdate = ()=>{
+      if(!updatingSeek) updateSeekUI();
+      updateTimeDisplay();
+      highlightCurrentThumb();
+    };
+    video.onended = ()=> updatePlayButton();
+    // mobile-friendly: disable native controls so we use our UI; but keep video element for rendering
+    video.controls = false;
+  }
 
-// 突顯當前縮圖
-function highlightThumb(t){
-  const list = [...thumbs.children];
-  if(!list.length) return;
-  const nearest = list.reduce((a,b)=>
-    Math.abs(parseFloat(b.dataset.time)-t) < Math.abs(parseFloat(a.dataset.time)-t) ? b : a
-  );
-  list.forEach(x=>x.classList.remove('active'));
-  nearest.classList.add('active');
-  nearest.scrollIntoView({behavior:'smooth',inline:'center'});
-}
+  // play/pause
+  playBtn.addEventListener('click', ()=>{
+    if(video.paused){
+      if(speedSelect.value === 'frame'){
+        // per-second-one-frame mode
+        startFrameMode();
+      }else{
+        stopFrameMode();
+        video.playbackRate = parseFloat(speedSelect.value);
+        video.play();
+      }
+    }else{
+      video.pause();
+      stopFrameMode();
+    }
+  });
+
+  speedSelect.addEventListener('change', ()=>{
+    const val = speedSelect.value;
+    if(val === 'frame'){
+      // stop normal play and set up per-frame later when Play pressed
+      video.pause();
+      stopFrameMode();
+    } else {
+      stopFrameMode();
+      video.playbackRate = parseFloat(val);
+      // if video was playing, keep playing at new speed
+      if(!video.paused) video.play();
+    }
+    updatePlayButton();
+  });
+
+  function updatePlayButton(){
+    if(!video.src) { playBtn.textContent = '播放'; return; }
+    if(speedSelect.value === 'frame'){
+      playBtn.textContent = (isPlayingPerFrameMode ? '暫停' : '播放');
+    } else {
+      playBtn.textContent = (video.paused ? '播放' : '暫停');
+    }
+  }
+
+  // forward/backward big jumps (5s)
+  backBtn.addEventListener('click', ()=> seekRelative(-5));
+  forwardBtn.addEventListener('click', ()=> seekRelative(5));
+
+  function seekRelative(sec){
+    stopFrameMode();
+    let t = Math.max(0, Math.min(duration, video.currentTime + sec));
+    video.currentTime = t;
+  }
+
+  // prev/next frame (依 fps)
+  prevFrameBtn.addEventListener('click', ()=> stepFrame(-1));
+  nextFrameBtn.addEventListener('click', ()=> stepFrame(1));
+
+  function stepFrame(n){
+    stopFrameMode();
+    const fps = Math.max(1, parseFloat(fpsInput.value) || 30);
+    const delta = n / fps;
+    let t = Math.max(0, Math.min(duration, video.currentTime + delta));
+    video.currentTime = t;
+  }
+
+  // seek range
+  seekRange.addEventListener('input', (e)=>{
+    updatingSeek = true;
+    const t = parseFloat(e.target.value || 0);
+    updateTimeDisplay(t);
+  });
+  seekRange.addEventListener('change', (e)=>{
+    const t = parseFloat(e.target.value || 0);
+    video.currentTime = t;
+    updatingSeek = false;
+  });
+
+  function updateSeekUI(){
+    seekRange.value = video.currentTime;
+  }
+
+  // time & frame display
+  function formatTime(t){
+    if(isNaN(t)) t = 0;
+    const mm = Math.floor(t/60).toString().padStart(2,'0');
+    const ss = Math.floor(t%60).toString().padStart(2,'0');
+    const cs = Math.floor((t - Math.floor(t)) * 100).toString().padStart(2,'0');
+    return `${mm}:${ss}.${cs}`;
+  }
+  function updateTimeDisplay(forceTime){
+    const t = (typeof forceTime === 'number') ? forceTime : video.currentTime || 0;
+    const fps = Math.max(1, parseFloat(fpsInput.value) || 30);
+    const frame = Math.floor(t * fps);
+    timeDisplay.textContent = `${formatTime(t)} / ${formatTime(duration)} — frame ${frame}`;
+  }
+
+  // save current frame -> download PNG
+  saveFrameBtn.addEventListener('click', saveCurrentFrame);
+  async function saveCurrentFrame(){
+    if(!video.src) return alert('請先選影片');
+    // draw to canvas at video's intrinsic resolution (if available)
+    const w = video.videoWidth || 1280;
+    const h = video.videoHeight || 720;
+    hiddenCanvas.width = w;
+    hiddenCanvas.height = h;
+    const ctx = hiddenCanvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);
+    // create blob and download
+    hiddenCanvas.toBlob((blob)=>{
+      if(!blob) return alert('擷取失敗');
+      const url = URL.createObjectURL(blob);
+      downloadAnchor.href = url;
+      const name = `frame_${Math.floor(video.currentTime*1000)}.png`;
+      downloadAnchor.download = name;
+      downloadAnchor.click();
+      // revoke after short delay
+      setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    }, 'image/png');
+  }
+
+  // --- thumbnails generation ---
+  regenThumbsBtn.addEventListener('click', ()=> generateThumbnails(true));
+
+  async function generateThumbnails(force=false){
+    thumbsEl.innerHTML = '';
+    thumbs = [];
+    currentThumbIndex = -1;
+    if(!video.src) return;
+    // decide sample count based on duration (limit to 60)
+    thumbCount = Math.min(60, Math.max(8, Math.round((duration/Math.max(1,Math.min(5,duration/10))) * 6)));
+    // for long videos sample by uniform intervals
+    const samples = [];
+    for(let i=0;i<thumbCount;i++){
+      samples.push((i/ (thumbCount-1 || 1)) * duration);
+    }
+    // create an offscreen canvas sized to small thumb width
+    const thumbH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--thumb-h')) || 64;
+    // choose width proportional to video aspect ratio
+    const vw = video.videoWidth || 640;
+    const vh = video.videoHeight || 360;
+    const aspect = vw / (vh || 1);
+    const thumbW = Math.round(thumbH * aspect);
+
+    // function to capture a single frame at time t
+    const captureAt = (t) => new Promise((resolve)=>{
+      const onseek = ()=>{
+        // draw
+        const c = document.createElement('canvas');
+        c.width = thumbW;
+        c.height = thumbH;
+        const ctx = c.getContext('2d');
+        try {
+          ctx.drawImage(video, 0, 0, c.width, c.height);
+        } catch(e) {
+          // drawing can fail on some iOS if not ready; fill with blank
+          ctx.fillStyle = '#222'; ctx.fillRect(0,0,c.width,c.height);
+        }
+        resolve({time:t,canvas:c});
+      };
+      const handler = ()=>{ video.removeEventListener('seeked', handler); onseek(); };
+      video.addEventListener('seeked', handler);
+      // set currentTime (some browsers may not fire seeked if same time)
+      video.currentTime = Math.min(duration, Math.max(0, t));
+    });
+
+    // we will capture sequentially to avoid race
+    // backup currentTime to restore later
+    const prevTime = video.currentTime;
+    const prevPaused = video.paused;
+    video.pause();
+
+    // show loading placeholders
+    for(let i=0;i<samples.length;i++){
+      const wrap = document.createElement('div');
+      wrap.className='thumb';
+      wrap.style.width = (thumbW)+'px';
+      wrap.innerHTML = `<div style="width:${thumbW}px;height:${thumbH}px;background:#eee"></div>`;
+      thumbsEl.appendChild(wrap);
+    }
+
+    for(let i=0;i<samples.length;i++){
+      try{
+        const item = await captureAt(samples[i]);
+        const wrap = thumbsEl.children[i];
+        wrap.innerHTML = '';
+        wrap.appendChild(item.canvas);
+        wrap.dataset.time = item.time;
+        wrap.addEventListener('click', ()=> { video.currentTime = parseFloat(wrap.dataset.time); });
+        wrap.addEventListener('touchstart', ()=> { video.currentTime = parseFloat(wrap.dataset.time); });
+        thumbs.push({time:item.time,el:wrap});
+      }catch(e){
+        console.warn('thumb capture failed', e);
+      }
+    }
+
+    // restore
+    video.currentTime = Math.min(duration, prevTime);
+    if(!prevPaused) video.play();
+    updatePlayButton();
+    updateSeekUI();
+    highlightCurrentThumb();
+  }
+
+  function highlightCurrentThumb(){
+    if(!thumbs.length) return;
+    // find nearest thumb index
+    const t = video.currentTime || 0;
+    let idx = 0;
+    for(let i=0;i<thumbs.length;i++){
+      if(Math.abs(thumbs[i].time - t) < Math.abs(thumbs[idx].time - t)) idx = i;
+    }
+    if(idx !== currentThumbIndex){
+      if(currentThumbIndex>=0 && thumbs[currentThumbIndex]) thumbs[currentThumbIndex].el.classList.remove('active');
+      currentThumbIndex = idx;
+      if(thumbs[currentThumbIndex]) {
+        thumbs[currentThumbIndex].el.classList.add('active');
+        // auto scroll into view on mobile
+        thumbs[currentThumbIndex].el.scrollIntoView({behavior:'smooth',inline:'center'});
+      }
+    }
+  }
+
+  // --- frame-by-frame per-second mode ---
+  function startFrameMode(){
+    // advance video.frame every 1 second (or 1/fps?) user wanted "每秒一個frame播放" — we interpret as advance by one frame per second
+    const fps = Math.max(1, parseFloat(fpsInput.value) || 30);
+    isPlayingPerFrameMode = true;
+    updatePlayButton();
+    video.pause();
+    // set timer to increment by 1 frame each second
+    frameTimer = setInterval(()=>{
+      const next = video.currentTime + (1 / fps);
+      if(next >= duration){
+        // stop at end
+        stopFrameMode();
+        return;
+      }
+      // set time and render
+      video.currentTime = next;
+    }, 1000);
+  }
+  function stopFrameMode(){
+    if(frameTimer) { clearInterval(frameTimer); frameTimer = null; }
+    isPlayingPerFrameMode = false;
+    updatePlayButton();
+  }
+  function stopFrameModeIfNeeded(){
+    if(speedSelect.value === 'frame'){
+      // keep paused status
+      stopFrameMode();
+    }
+  }
+
+  // cleanup
+  window.addEventListener('beforeunload', ()=> {
+    stopFrameMode();
+  });
+
+  // keyboard support for desktop (optional)
+  window.addEventListener('keydown', (e)=>{
+    if(e.key === ' '){ e.preventDefault(); playBtn.click(); }
+    if(e.key === 'ArrowLeft'){ backBtn.click(); }
+    if(e.key === 'ArrowRight'){ forwardBtn.click(); }
+    if(e.key === ',' ) prevFrameBtn.click();
+    if(e.key === '.' ) nextFrameBtn.click();
+  });
+
+  // initial UI state
+  updatePlayButton();
+})();
 </script>
 
 </body>
