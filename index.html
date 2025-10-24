@@ -260,6 +260,17 @@
     let currentRate = '1.0'; 
     let isDragging = false; 
     let lastObjectURL = null; 
+    
+    // --- 腳本啟動時，確保影片元素是乾淨的 ---
+    // 這是在 PWA 重新啟動時確保不會嘗試載入舊的失效 Blob URL 的關鍵。
+    video.src = ''; 
+    video.load(); 
+
+    // 顯示提示訊息，告知用戶需要重新選擇檔案
+    timeInfo.textContent = `請選擇影片檔案`;
+    
+    // 隱藏自訂 FPS 輸入框 (確保初始狀態正確)
+    customFpsInput.style.display = 'none';
 
     // --- FPS 處理邏輯 (保持不變) ---
     function updateFps(fpsValue) {
@@ -276,8 +287,6 @@
             assumedFPS = newFps;
             frameDuration = 1 / assumedFPS;
             fpsDisplay.textContent = `目前 FPS: ${assumedFPS}`;
-            
-            // 這裡不再設定 video.playbackRate，交給 togglePlayBtn 處理
         } else if (fpsValue !== 'custom') {
             fpsSelect.value = assumedFPS.toString();
         }
@@ -289,7 +298,7 @@
     });
     updateFps(fpsSelect.value); 
 
-    // --- 速度選單邏輯 ---
+    // --- 速度選單邏輯 (保持不變) ---
     speedBtn.addEventListener('click', (e) => {
         const rect = speedBtn.getBoundingClientRect();
         const videoWrapperRect = videoWrapper.getBoundingClientRect();
@@ -307,7 +316,6 @@
             
             if (!video.src) return;
             
-            // 如果影片正在播放，立即更新速率
             if (!video.paused) {
                 if (rate === '1fps') {
                     video.playbackRate = frameDuration;
@@ -315,7 +323,6 @@
                     video.playbackRate = parseFloat(rate);
                 }
             }
-            // 如果暫停，下次播放時才會生效
 
             speedOptions.forEach(b => b.classList.remove('active'));
             button.classList.add('active');
@@ -332,7 +339,7 @@
 
     // --- 影片控制邏輯 ---
     
-    // 1. 載入影片檔案 
+    // 1. 載入影片檔案 (處理 Blob URL 和用戶交互)
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -354,11 +361,8 @@
             const defaultSpeedBtn = speedMenu.querySelector('[data-rate="1.0"]');
             if (defaultSpeedBtn) defaultSpeedBtn.classList.add('active');
 
-            // 確保影片載入元數據後停在 0s
             video.currentTime = 0; 
             updateTimeInfo(0, video.duration || 0);
-
-            // 移除不必要的 loadedmetadata 處理，依賴原生行為
         }
     });
 
@@ -372,7 +376,7 @@
         video.currentTime = 0;
     });
 
-    // 3. 播放/暫停按鈕 (關鍵修正：立即設定 Rate，並簡化 Promise 錯誤處理)
+    // 3. 播放/暫停按鈕
     togglePlayBtn.addEventListener('click', () => {
         if (!video.src) {
             alert("請先點擊「選擇影片」載入檔案。");
@@ -381,7 +385,7 @@
 
         if (video.paused || video.ended) {
             
-            // *** 修正重點：在呼叫 play() 之前先設定播放速率 ***
+            // 在呼叫 play() 之前先設定播放速率
             if (currentRate === '1fps') {
                 video.playbackRate = frameDuration;
             } else {
@@ -392,10 +396,10 @@
             
             if (playPromise !== undefined) {
                 playPromise.catch(error => {
-                    // 播放失敗 (被瀏覽器阻止)
+                    // 播放失敗 (被瀏覽器阻止，這是 PWA 模式常見的)
                     console.error("Video Playback blocked/failed:", error);
-                    alert("影片無法自動播放，請手動拖曳進度條或使用逐幀按鈕後，再次點擊播放。");
-                    video.pause(); // 確保 UI 顯示為暫停
+                    alert("自動播放被阻止。請手動操作（拖曳進度條或逐幀）一次後，再嘗試點擊播放。");
+                    video.pause();
                 });
             }
         } else {
@@ -403,7 +407,6 @@
         }
     });
     
-    // 確保這些事件監聽器在任何情況下都能更新按鈕狀態
     video.addEventListener('play', () => { togglePlayBtn.textContent = '⏸'; });
     video.addEventListener('pause', () => { togglePlayBtn.textContent = '▶'; });
     
@@ -417,6 +420,13 @@
     });
     
     function updateTimeInfo(currentTime = video.currentTime, duration = video.duration) {
+        // 如果沒有 duration 或 currentTime 無效，顯示初始提示
+        if (!duration || isNaN(duration)) {
+             timeInfo.textContent = `請選擇影片檔案`;
+             frameInfo.textContent = `F: 0`;
+             return;
+        }
+        
         const currentFrame = Math.round(currentTime * assumedFPS); 
 
         const formatTime = (seconds) => {
@@ -460,7 +470,6 @@
         const seekTime = progressBar.value / 1000;
         video.currentTime = seekTime;
         isDragging = false;
-        // 如果影片載入後，用戶拖動了進度條，視為一次有效的互動，並暫停
         if (!video.paused) video.pause();
     });
 
@@ -491,9 +500,8 @@
         }
     });
 
-    // 9. 移除 window.addEventListener('focus', ...)
-    // 避免在 PWA 恢復時，自動的 video.load() 造成狀態不穩定。
 </script>
+
 
 </body>
 </html>
