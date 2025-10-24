@@ -19,7 +19,8 @@
             width: 100%;
             max-width: 900px;
             background-color: #333;
-            position: relative; /* 關鍵：用於定位浮水印控制項 */
+            /* 讓 controls-overlay 相對於此容器定位 */
+            position: relative; 
         }
         #videoPlayer {
             width: 100%;
@@ -30,7 +31,7 @@
         /* --- 浮水印播放控制區域 (第一排按鈕) --- */
         .controls-overlay {
             position: absolute;
-            bottom: 10px; /* 距離影片底部 */
+            bottom: 10px; /* 距離影片底部，即 controls-panel 的上方 */
             left: 50%;
             transform: translateX(-50%); /* 水平居中 */
             display: flex;
@@ -40,11 +41,12 @@
             background-color: rgba(0, 0, 0, 0.5); /* 半透明背景 */
             border-radius: 8px;
             z-index: 500; 
+            /* 讓按鈕不要超過影片寬度 */
+            max-width: 90%; 
         }
         
-        /* 繼承所有按鈕的基礎樣式，並調整背景 */
         .controls-overlay button {
-            background-color: rgba(68, 68, 68, 0.8); /* 半透明按鈕 */
+            background-color: rgba(68, 68, 68, 0.8);
             border: none;
             color: #fff;
             padding: 8px 10px;
@@ -59,9 +61,9 @@
             background-color: #007aff; 
         }
         #togglePlay {
-            background-color: #007aff; /* 突出播放按鈕 */
+            background-color: #007aff;
             font-size: 18px;
-            padding: 8px 15px; /* 播放鍵稍微寬一點 */
+            padding: 8px 15px;
         }
         #togglePlay:hover {
              background-color: #0056b3; 
@@ -70,8 +72,7 @@
         /* --- 速度選單 (浮動) --- */
         .speed-menu {
             position: absolute;
-            bottom: 60px; /* 位於浮水印控制上方 */
-            right: 120px; /* 定位將在 JS 中動態計算 */
+            /* 這些定位會在 JS 中根據 speedBtn 重新計算 */
             background-color: #333;
             border-radius: 4px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
@@ -82,14 +83,14 @@
             gap: 4px;
         }
         .speed-menu button {
-            background-color: #444;
+            /* 覆寫繼承的浮水印按鈕樣式 */
+            background-color: #444; 
             color: #fff;
             padding: 6px 12px;
             font-size: 14px;
             min-width: 100px;
             flex-grow: 1;
-            /* 覆寫浮水印按鈕的樣式，使用不透明背景 */
-            background-color: #444; 
+            height: auto;
         }
         .speed-menu button.active {
             background-color: #007aff;
@@ -126,82 +127,26 @@
             white-space: nowrap;
         }
         
-        /* --- 第二排：進度條與時間資訊 --- */
-        .controls-progress {
-            /* 保持不變 */
-        }
-        .status-info {
-            font-size: 14px;
-            white-space: nowrap;
-            padding: 0 5px;
-            flex-grow: 0;
-        }
-        #timeInfo {
-            flex-grow: 0;
-            min-width: 120px;
-            text-align: right;
-        }
-        #frameInfo {
-            flex-grow: 0;
-            min-width: 60px;
-        }
+        /* 第二排：進度條與時間資訊 */
+        #timeInfo { min-width: 120px; text-align: right; }
+        #frameInfo { min-width: 60px; }
         input[type="range"] {
-            flex-grow: 3; 
-            min-width: 100px;
-            -webkit-appearance: none;
-            height: 8px;
-            background: #555;
-            border-radius: 5px;
-            cursor: pointer;
+            flex-grow: 3; min-width: 100px;
+            -webkit-appearance: none; height: 8px; background: #555;
+            border-radius: 5px; cursor: pointer;
         }
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            background: #fff;
+            -webkit-appearance: none; appearance: none; width: 15px;
+            height: 15px; border-radius: 50%; background: #fff;
         }
         
-        /* --- 第三排：檔案與 FPS 設定 --- */
-        .controls-setup {
-            justify-content: flex-start;
-        }
-        #fileInputLabel {
-            background-color: #007aff;
-            flex-grow: 0;
-        }
-        #fullscreenBtn { 
-            background-color: #444;
-            flex-grow: 0;
-            min-width: 40px;
-        }
-        #fpsSelect {
-            flex-grow: 0;
-            min-width: 70px;
-        }
-        #customFpsInput {
-            flex-grow: 0;
-            width: 60px;
-            text-align: center;
-            background-color: #333;
-        }
-        #fpsDisplay {
-            flex-grow: 1;
-            text-align: left;
-        }
+        /* 第三排：檔案與 FPS 設定 */
+        #fileInputLabel { background-color: #007aff; flex-grow: 0; }
+        #fullscreenBtn { background-color: #444; flex-grow: 0; min-width: 40px; }
+        #fpsSelect { flex-grow: 0; min-width: 70px; }
+        #customFpsInput { flex-grow: 0; width: 60px; text-align: center; background-color: #333; }
+        #fpsDisplay { flex-grow: 1; text-align: left; }
 
-        /* 全螢幕模式 */
-        .player-container:-webkit-full-screen { 
-            width: 100%;
-            height: 100%;
-            max-width: none;
-        }
-        .player-container:fullscreen {
-            width: 100%;
-            height: 100%;
-            max-width: none;
-        }
     </style>
 </head>
 <body>
@@ -284,10 +229,10 @@
 
     let assumedFPS = 30; 
     let frameDuration = 1 / assumedFPS;
-    let currentRate = '1.0'; // 追蹤當前的播放速度值
+    let currentRate = '1.0'; 
     let isDragging = false; 
 
-    // --- FPS 處理邏輯 (不變) ---
+    // --- FPS 處理邏輯 (保持不變) ---
 
     function updateFps(fpsValue) {
         let newFps;
@@ -321,24 +266,30 @@
 
     updateFps(fpsSelect.value); 
 
-    // --- 速度選單邏輯 ---
+    // --- 速度選單邏輯 (修正定位計算) ---
 
     // 顯示/隱藏速度選單
     speedBtn.addEventListener('click', (e) => {
-        // 根據浮水印按鈕的位置來計算選單位置
+        // 速度按鈕在 controlsOverlay 內部
         const rect = speedBtn.getBoundingClientRect();
+        const overlayRect = controlsOverlay.getBoundingClientRect();
+        
+        // 計算 speedBtn 相對於 controlsOverlay 左邊緣的距離
+        const speedBtnLeftOffset = rect.left - overlayRect.left;
+        
+        // 計算選單應該在 controlsOverlay 內部的位置，使其靠右對齊 speedBtn
+        const menuWidth = 120; // 預估選單寬度
+        const rightPosition = overlayRect.width - (speedBtnLeftOffset + rect.width) + (rect.width / 2) - (menuWidth / 2); // 調整對齊方式
+        
+        // 確保 speedMenu 浮動在 controlsOverlay 上方
+        speedMenu.style.bottom = `${controlsOverlay.offsetHeight + 10}px`; 
+        
+        // 由於 speedMenu 的 position: absolute 是相對於 playerContainer
+        // 我們需要計算 speedBtn 距離 playerContainer 右邊緣的距離
         const containerRect = playerContainer.getBoundingClientRect();
+        const absoluteRight = containerRect.width - rect.right;
         
-        // 由於 speedBtn 在 controls-overlay 內部，且 controls-overlay 水平居中
-        // 我們需要計算 speedBtn 距離 container 右側的距離
-        const controlsOverlayRect = controlsOverlay.getBoundingClientRect();
-        const speedBtnRightOffset = controlsOverlayRect.right - rect.right; // speedBtn 距離 controls-overlay 右邊緣的距離
-        
-        // 選單右邊緣應對齊 controls-overlay 的右邊緣
-        const rightPosition = (containerRect.width - controlsOverlayRect.right) + speedBtnRightOffset + 10;
-        
-        speedMenu.style.right = `${rightPosition}px`;
-        speedMenu.style.bottom = `${controlsOverlay.offsetHeight + 10}px`; // 浮水印高度 + 10px
+        speedMenu.style.right = `${absoluteRight - (rect.width / 2) + 20}px`; 
 
         speedMenu.style.display = speedMenu.style.display === 'flex' ? 'none' : 'flex';
         e.stopPropagation(); 
